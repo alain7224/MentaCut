@@ -10,6 +10,7 @@ export default function HomePage() {
         </div>
         <nav className="nav">
           <Link href="/studio" className="nav-link">Abrir estudio</Link>
+          <Link href="/studio/backup" className="nav-link">Backup local</Link>
           <a href="https://www.clipshort.co/es" className="nav-link" target="_blank" rel="noreferrer">Referencia visual</a>
         </nav>
       </header>
