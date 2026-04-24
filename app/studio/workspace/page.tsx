@@ -7,14 +7,37 @@ import { listLocalMedia, type LocalMediaRecord } from '@/lib/local-media'
 import { TEMPLATE_PRESETS } from '@/lib/template-presets'
 import { STICKER_PRESETS, TEXT_PRESET_SUGGESTIONS } from '@/lib/overlay-presets'
 import { GRAPHIC_OVERLAY_PRESETS } from '@/lib/graphic-overlay-presets'
+import { readLocalPreferences, type LocalPreferences } from '@/lib/local-preferences'
+import { readLocalLibraryFavorites, type LocalLibraryFavorites } from '@/lib/local-library'
+
+const EMPTY_PREFERENCES: LocalPreferences = {
+  startupRoute: '/studio/workspace',
+  uiDensity: 'comfortable',
+  defaultProjectFormat: '9:16',
+  reducedMotion: false,
+  autoplayPreview: false,
+  snapTimeline: true,
+  showTips: true,
+}
+
+const EMPTY_FAVORITES: LocalLibraryFavorites = {
+  templateIds: [],
+  stickerIds: [],
+  overlayIds: [],
+  textValues: [],
+}
 
 export default function StudioWorkspacePage() {
   const [projects, setProjects] = useState<LocalProject[]>([])
   const [media, setMedia] = useState<LocalMediaRecord[]>([])
+  const [preferences, setPreferences] = useState<LocalPreferences>(EMPTY_PREFERENCES)
+  const [favorites, setFavorites] = useState<LocalLibraryFavorites>(EMPTY_FAVORITES)
 
   useEffect(() => {
     setProjects(readLocalProjects())
     void listLocalMedia().then(setMedia).catch(() => setMedia([]))
+    setPreferences(readLocalPreferences())
+    setFavorites(readLocalLibraryFavorites())
   }, [])
 
   const stats = useMemo(() => {
@@ -22,6 +45,7 @@ export default function StudioWorkspacePage() {
     const video = media.filter((item) => item.kind === 'video').length
     const image = media.filter((item) => item.kind === 'image').length
     const audio = media.filter((item) => item.kind === 'audio').length
+    const favoriteCount = favorites.templateIds.length + favorites.stickerIds.length + favorites.overlayIds.length + favorites.textValues.length
     return {
       projects: projects.length,
       clips,
@@ -33,8 +57,9 @@ export default function StudioWorkspacePage() {
       stickers: STICKER_PRESETS.length,
       overlays: GRAPHIC_OVERLAY_PRESETS.length,
       texts: TEXT_PRESET_SUGGESTIONS.length,
+      favoriteCount,
     }
-  }, [projects, media])
+  }, [projects, media, favorites])
 
   const recentProjects = useMemo(() => [...projects].sort((a, b) => b.updatedAt.localeCompare(a.updatedAt)).slice(0, 5), [projects])
   const recentMedia = useMemo(() => [...media].sort((a, b) => b.createdAt.localeCompare(a.createdAt)).slice(0, 5), [media])
@@ -84,7 +109,7 @@ export default function StudioWorkspacePage() {
             <article className="panel card"><h3>Proyectos</h3><p><strong>{stats.projects}</strong> guardados</p></article>
             <article className="panel card"><h3>Clips</h3><p><strong>{stats.clips}</strong> en total</p></article>
             <article className="panel card"><h3>Media local</h3><p><strong>{stats.media}</strong> archivos</p></article>
-            <article className="panel card"><h3>Plantillas</h3><p><strong>{stats.templates}</strong> presets</p></article>
+            <article className="panel card"><h3>Favoritos</h3><p><strong>{stats.favoriteCount}</strong> guardados</p></article>
           </div>
         </section>
 
@@ -118,6 +143,42 @@ export default function StudioWorkspacePage() {
                 <Link href="/studio/library" className="project-item"><strong>Explorar biblioteca</strong><div className="timeline-label">Plantillas, textos, stickers y overlays</div></Link>
                 <Link href="/studio/settings" className="project-item"><strong>Ajustes locales</strong><div className="timeline-label">Configura ruta de inicio, formato y comportamiento</div></Link>
                 <Link href="/studio/backup" className="project-item"><strong>Backup local</strong><div className="timeline-label">Exportar e importar el estado local</div></Link>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section className="section">
+          <div className="studio-grid-2">
+            <div className="panel timeline">
+              <div className="row-head">
+                <h2 className="section-title">Preferencias activas</h2>
+                <div className="timeline-label">Leídas desde tu navegador</div>
+              </div>
+              <div className="cards" style={{ gridTemplateColumns: 'repeat(2, minmax(0, 1fr))' }}>
+                <article className="panel card"><h3>Ruta inicial</h3><p>{preferences.startupRoute}</p></article>
+                <article className="panel card"><h3>Formato por defecto</h3><p>{preferences.defaultProjectFormat}</p></article>
+                <article className="panel card"><h3>Densidad UI</h3><p>{preferences.uiDensity}</p></article>
+                <article className="panel card"><h3>Reducir movimiento</h3><p>{preferences.reducedMotion ? 'Sí' : 'No'}</p></article>
+                <article className="panel card"><h3>Autoplay preview</h3><p>{preferences.autoplayPreview ? 'Sí' : 'No'}</p></article>
+                <article className="panel card"><h3>Snap timeline</h3><p>{preferences.snapTimeline ? 'Sí' : 'No'}</p></article>
+              </div>
+            </div>
+
+            <div className="panel timeline">
+              <div className="row-head">
+                <h2 className="section-title">Favoritos guardados</h2>
+                <div className="timeline-label">Biblioteca personal</div>
+              </div>
+              <div className="cards" style={{ gridTemplateColumns: 'repeat(2, minmax(0, 1fr))' }}>
+                <article className="panel card"><h3>Plantillas</h3><p><strong>{favorites.templateIds.length}</strong> favoritas</p></article>
+                <article className="panel card"><h3>Stickers</h3><p><strong>{favorites.stickerIds.length}</strong> favoritos</p></article>
+                <article className="panel card"><h3>Overlays</h3><p><strong>{favorites.overlayIds.length}</strong> favoritos</p></article>
+                <article className="panel card"><h3>Textos</h3><p><strong>{favorites.textValues.length}</strong> favoritos</p></article>
+              </div>
+              <div className="action-row" style={{ marginTop: 12 }}>
+                <Link href="/studio/library" className="btn btn-primary">Abrir biblioteca</Link>
+                <Link href="/studio/settings" className="btn">Abrir ajustes</Link>
               </div>
             </div>
           </div>
