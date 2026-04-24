@@ -45,7 +45,8 @@ function readDuration(file: File, kind: LocalMediaKind): Promise<number | null> 
         URL.revokeObjectURL(url)
         resolve(null)
       }
-      audio.src = url
+      if (url.startsWith('blob:')) audio.src = url
+      else { URL.revokeObjectURL(url); resolve(null) }
       return
     }
     const video = document.createElement('video')
@@ -58,7 +59,8 @@ function readDuration(file: File, kind: LocalMediaKind): Promise<number | null> 
       URL.revokeObjectURL(url)
       resolve(null)
     }
-    video.src = url
+    if (url.startsWith('blob:')) video.src = url
+    else { URL.revokeObjectURL(url); resolve(null) }
   })
 }
 
