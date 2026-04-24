@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from 'react'
 import Link from 'next/link'
+import './studio.css'
 import { createProject, touchProject, readLocalProjects, type LocalClip, type LocalProject, writeLocalProjects } from '@/lib/local-store'
 import { getLocalMediaFile, listLocalMedia, removeLocalMedia, saveLocalMedia, type LocalMediaRecord } from '@/lib/local-media'
 import { TEMPLATE_PRESETS } from '@/lib/template-presets'
