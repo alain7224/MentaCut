@@ -36,6 +36,31 @@
   backdrop-filter: blur(16px);
 }
 
+.graphic-overlay {
+  position: absolute;
+  inset: auto auto 18% 12%;
+  font-size: clamp(2rem, 8vw, 4rem);
+  font-weight: 800;
+  line-height: 1;
+  filter: drop-shadow(0 10px 26px rgba(0, 0, 0, 0.28));
+}
+
+.graphic-mint {
+  color: #59ffd3;
+}
+
+.graphic-blue {
+  color: #7bc7ff;
+}
+
+.graphic-gold {
+  color: #ffcf6b;
+}
+
+.graphic-hot {
+  color: #ff7a6b;
+}
+
 .trim-panel {
   display: grid;
   gap: 10px;
@@ -85,13 +110,21 @@
   color: inherit;
 }
 
-.sticker-grid {
+.clip-command-row {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.sticker-grid,
+.overlay-grid {
   display: grid;
   gap: 10px;
   grid-template-columns: repeat(4, minmax(0, 1fr));
 }
 
-.sticker-card {
+.sticker-card,
+.overlay-card {
   min-height: 84px;
   border-radius: 18px;
   border: 1px solid rgba(255, 255, 255, 0.12);
@@ -104,9 +137,15 @@
   text-align: center;
 }
 
-.sticker-card.active {
+.sticker-card.active,
+.overlay-card.active {
   border-color: rgba(89, 255, 211, 0.38);
   background: rgba(89, 255, 211, 0.10);
+}
+
+.overlay-symbol {
+  font-size: 2rem;
+  line-height: 1;
 }
 
 .clear-card {
@@ -115,7 +154,8 @@
 }
 
 @media (max-width: 980px) {
-  .sticker-grid {
+  .sticker-grid,
+  .overlay-grid {
     grid-template-columns: 1fr;
   }
 }
