@@ -10,6 +10,7 @@ export default function HomePage() {
         </div>
         <nav className="nav">
           <Link href="/studio" className="nav-link">Abrir estudio</Link>
+          <Link href="/studio/library" className="nav-link">Biblioteca</Link>
           <Link href="/studio/backup" className="nav-link">Backup local</Link>
           <a href="https://www.clipshort.co/es" className="nav-link" target="_blank" rel="noreferrer">Referencia visual</a>
         </nav>
@@ -26,6 +27,7 @@ export default function HomePage() {
             </p>
             <div className="action-row">
               <Link href="/studio" className="btn btn-primary">Entrar al estudio</Link>
+              <Link href="/studio/library" className="btn">Abrir biblioteca</Link>
               <a href="/docs/MENTACUT_MASTER_SPEC.md" className="btn">Leer dirección del producto</a>
             </div>
           </div>
