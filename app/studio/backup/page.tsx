@@ -26,7 +26,9 @@ export default function StudioBackupPage() {
         </div>
         <nav className="nav">
           <Link href="/" className="nav-link">Inicio</Link>
-          <Link href="/studio" className="nav-link">Volver al estudio</Link>
+          <Link href="/studio" className="nav-link">Estudio</Link>
+          <Link href="/studio/projects" className="nav-link">Proyectos</Link>
+          <Link href="/studio/media" className="nav-link">Media</Link>
         </nav>
       </header>
 
@@ -41,6 +43,7 @@ export default function StudioBackupPage() {
             </p>
             <div className="action-row">
               <Link href="/studio" className="btn btn-primary">Abrir editor</Link>
+              <Link href="/studio/projects" className="btn">Abrir proyectos</Link>
               <Link href="/docs/LOCAL_BACKUP_FORMAT.md" className="btn">Ver formato del backup</Link>
             </div>
           </div>
