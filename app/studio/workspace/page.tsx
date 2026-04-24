@@ -48,11 +48,13 @@ export default function StudioWorkspacePage() {
         </div>
         <nav className="nav">
           <Link href="/" className="nav-link">Inicio</Link>
+          <Link href="/studio/open" className="nav-link">Abrir según ajuste</Link>
           <Link href="/studio" className="nav-link">Estudio</Link>
           <Link href="/studio/new" className="nav-link">Nuevo</Link>
           <Link href="/studio/projects" className="nav-link">Proyectos</Link>
           <Link href="/studio/media" className="nav-link">Media</Link>
           <Link href="/studio/library" className="nav-link">Biblioteca</Link>
+          <Link href="/studio/settings" className="nav-link">Ajustes</Link>
           <Link href="/studio/backup" className="nav-link">Backup</Link>
         </nav>
       </header>
@@ -67,8 +69,9 @@ export default function StudioWorkspacePage() {
               Sirve como hub rápido entre proyectos, media, biblioteca y backup.
             </p>
             <div className="action-row">
-              <Link href="/studio" className="btn btn-primary">Abrir estudio</Link>
+              <Link href="/studio/open" className="btn btn-primary">Abrir según ajuste</Link>
               <Link href="/studio/new" className="btn">Nuevo proyecto</Link>
+              <Link href="/studio/settings" className="btn">Abrir ajustes</Link>
               <Link href="/studio/projects" className="btn">Abrir proyectos</Link>
               <Link href="/studio/media" className="btn">Abrir media</Link>
               <Link href="/studio/library" className="btn">Abrir biblioteca</Link>
@@ -108,10 +111,12 @@ export default function StudioWorkspacePage() {
                 <div className="timeline-label">Flujo de trabajo</div>
               </div>
               <div className="project-list">
+                <Link href="/studio/open" className="project-item"><strong>Arranque inteligente</strong><div className="timeline-label">Abre tu ruta favorita según ajustes locales</div></Link>
                 <Link href="/studio/new" className="project-item"><strong>Nuevo proyecto</strong><div className="timeline-label">Crea un proyecto desde una base visual</div></Link>
                 <Link href="/studio/projects" className="project-item"><strong>Gestionar proyectos</strong><div className="timeline-label">Crear, duplicar, renombrar y borrar</div></Link>
                 <Link href="/studio/media" className="project-item"><strong>Gestionar media</strong><div className="timeline-label">Subir, filtrar, previsualizar y borrar</div></Link>
                 <Link href="/studio/library" className="project-item"><strong>Explorar biblioteca</strong><div className="timeline-label">Plantillas, textos, stickers y overlays</div></Link>
+                <Link href="/studio/settings" className="project-item"><strong>Ajustes locales</strong><div className="timeline-label">Configura ruta de inicio, formato y comportamiento</div></Link>
                 <Link href="/studio/backup" className="project-item"><strong>Backup local</strong><div className="timeline-label">Exportar e importar el estado local</div></Link>
               </div>
             </div>
