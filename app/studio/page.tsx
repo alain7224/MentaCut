@@ -7,6 +7,8 @@ import { createProject, touchProject, readLocalProjects, type LocalClip, type Lo
 import { getLocalMediaFile, listLocalMedia, removeLocalMedia, saveLocalMedia, type LocalMediaRecord } from '@/lib/local-media'
 import { TEMPLATE_PRESETS } from '@/lib/template-presets'
 import { STICKER_PRESETS, TEXT_PRESET_SUGGESTIONS } from '@/lib/overlay-presets'
+import { GRAPHIC_OVERLAY_PRESETS } from '@/lib/graphic-overlay-presets'
+import { duplicateClip, moveItem, splitClip } from '@/lib/timeline-utils'
 
 export default function StudioPage() {
   const [projects, setProjects] = useState<LocalProject[]>([])
@@ -34,6 +36,7 @@ export default function StudioPage() {
   const selectedClip = useMemo(() => active?.clips.find((clip) => clip.id === selectedClipId) ?? active?.clips[0] ?? null, [active, selectedClipId])
   const selectedTemplate = useMemo(() => TEMPLATE_PRESETS.find((item) => item.id === selectedClip?.templateId) ?? TEMPLATE_PRESETS[0], [selectedClip])
   const selectedSticker = useMemo(() => STICKER_PRESETS.find((item) => item.id === selectedClip?.stickerId) ?? null, [selectedClip])
+  const selectedGraphicOverlay = useMemo(() => GRAPHIC_OVERLAY_PRESETS.find((item) => item.id === selectedClip?.graphicOverlayId) ?? null, [selectedClip])
   const selectedClipMedia = useMemo(() => library.find((item) => item.id === selectedClip?.mediaId) ?? null, [library, selectedClip])
 
   useEffect(() => {
@@ -161,6 +164,7 @@ export default function StudioPage() {
       headlineText: 'Gancho fuerte',
       captionText: 'Texto editable del clip',
       stickerId: null,
+      graphicOverlayId: null,
     }
     updateActiveProject((project) => ({ ...project, clips: [...project.clips, nextClip] }))
     setSelectedClipId(nextClip.id)
@@ -183,6 +187,7 @@ export default function StudioPage() {
       headlineText: 'Gancho fuerte',
       captionText: 'Texto editable del clip',
       stickerId: null,
+      graphicOverlayId: null,
     }
     updateActiveProject((project) => ({ ...project, clips: [...project.clips, nextClip] }))
     setSelectedClipId(nextClip.id)
@@ -202,6 +207,37 @@ export default function StudioPage() {
       return
     }
     updateClip(selectedClip.id, { mediaId: selectedMedia.id, title: selectedMedia.name.replace(/\.[^.]+$/, '') })
+  }
+
+  function duplicateSelectedClip() {
+    if (!active || !selectedClip) return
+    const index = active.clips.findIndex((clip) => clip.id === selectedClip.id)
+    const copy = { ...duplicateClip(selectedClip), graphicOverlayId: selectedClip.graphicOverlayId ?? null }
+    updateActiveProject((project) => ({
+      ...project,
+      clips: [...project.clips.slice(0, index + 1), copy, ...project.clips.slice(index + 1)],
+    }))
+    setSelectedClipId(copy.id)
+  }
+
+  function splitSelectedClip() {
+    if (!active || !selectedClip) return
+    const index = active.clips.findIndex((clip) => clip.id === selectedClip.id)
+    const midpoint = Number(((selectedClip.start + selectedClip.end) / 2).toFixed(2))
+    const [first, second] = splitClip(selectedClip, midpoint)
+    updateActiveProject((project) => ({
+      ...project,
+      clips: [...project.clips.slice(0, index), first, second, ...project.clips.slice(index + 1)],
+    }))
+    setSelectedClipId(first.id)
+  }
+
+  function moveSelectedClip(direction: 'left' | 'right') {
+    if (!active || !selectedClip) return
+    const index = active.clips.findIndex((clip) => clip.id === selectedClip.id)
+    const nextIndex = direction === 'left' ? Math.max(0, index - 1) : Math.min(active.clips.length - 1, index + 1)
+    if (nextIndex === index) return
+    updateActiveProject((project) => ({ ...project, clips: moveItem(project.clips, index, nextIndex) }))
   }
 
   function zoomWidth(clip: LocalClip) {
@@ -301,6 +337,7 @@ export default function StudioPage() {
                 {selectedClip ? <div className="headline-overlay">{selectedClip.headlineText}</div> : null}
                 {selectedClip ? <div className="caption-overlay">{selectedClip.captionText}</div> : null}
                 {selectedSticker ? <div className="sticker-overlay">{selectedSticker.emoji} {selectedSticker.label}</div> : null}
+                {selectedGraphicOverlay ? <div className={`graphic-overlay graphic-${selectedGraphicOverlay.style}`}>{selectedGraphicOverlay.symbol}</div> : null}
               </div>
               {selectedClip?.audioMediaId && stageAudioUrl ? <audio className="audio-preview" src={stageAudioUrl} controls /> : null}
               {selectedClip ? (
@@ -349,6 +386,12 @@ export default function StudioPage() {
             <div className="row-head">
               <h2 className="section-title">Timeline editable</h2>
               <label className="zoom-control"><span className="timeline-label">Zoom</span><input type="range" min="2" max="12" step="1" value={timelineZoom} onChange={(event) => setTimelineZoom(Number(event.target.value))} /></label>
+            </div>
+            <div className="clip-command-row">
+              <button className="btn" onClick={() => moveSelectedClip('left')} disabled={!selectedClip}>Mover izquierda</button>
+              <button className="btn" onClick={() => moveSelectedClip('right')} disabled={!selectedClip}>Mover derecha</button>
+              <button className="btn" onClick={duplicateSelectedClip} disabled={!selectedClip}>Duplicar</button>
+              <button className="btn" onClick={splitSelectedClip} disabled={!selectedClip}>Dividir</button>
             </div>
             <div className="timeline-scroll">
               {(active?.clips ?? []).map((clip) => (
@@ -406,6 +449,22 @@ export default function StudioPage() {
                 ))}
                 {selectedClip?.stickerId ? <button className="sticker-card clear-card" onClick={() => updateClip(selectedClip.id, { stickerId: null })}>Quitar sticker</button> : null}
               </div>
+            </div>
+          </div>
+
+          <div className="panel timeline">
+            <div className="row-head">
+              <h2 className="section-title">Overlays gráficos</h2>
+              <div className="timeline-label">Aplicables al clip activo</div>
+            </div>
+            <div className="overlay-grid">
+              {GRAPHIC_OVERLAY_PRESETS.map((overlay) => (
+                <button key={overlay.id} className={`overlay-card ${selectedClip?.graphicOverlayId === overlay.id ? 'active' : ''}`} onClick={() => selectedClip ? updateClip(selectedClip.id, { graphicOverlayId: overlay.id }) : undefined}>
+                  <span className={`overlay-symbol overlay-${overlay.style}`}>{overlay.symbol}</span>
+                  <strong>{overlay.name}</strong>
+                </button>
+              ))}
+              {selectedClip?.graphicOverlayId ? <button className="overlay-card clear-card" onClick={() => updateClip(selectedClip.id, { graphicOverlayId: null })}>Quitar overlay</button> : null}
             </div>
           </div>
 
