@@ -11,6 +11,9 @@ export type LocalClip = {
   frameX: number
   frameY: number
   frameScale: number
+  headlineText: string
+  captionText: string
+  stickerId: string | null
 }
 
 export type LocalProject = {
@@ -52,6 +55,9 @@ function createBaseClip(title: string, start: number, end: number): LocalClip {
     frameX: 50,
     frameY: 50,
     frameScale: 1,
+    headlineText: 'Gancho fuerte',
+    captionText: 'Texto editable del clip',
+    stickerId: null,
   }
 }
 
@@ -62,10 +68,7 @@ export function createProject(name: string, format: ProjectFormat): LocalProject
     name,
     format,
     updatedAt: now,
-    clips: [
-      createBaseClip('Clip 1', 0, 5),
-      createBaseClip('Clip 2', 5, 11),
-    ],
+    clips: [createBaseClip('Clip 1', 0, 5), createBaseClip('Clip 2', 5, 11)],
   }
 }
 
