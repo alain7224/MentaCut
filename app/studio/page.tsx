@@ -2,40 +2,51 @@
 
 import { useEffect, useMemo, useState } from 'react'
 import Link from 'next/link'
-import { createProject, readLocalProjects, touchProject, type LocalClip, type LocalProject, writeLocalProjects } from '@/lib/local-store'
+import { createProject, touchProject, readLocalProjects, type LocalClip, type LocalProject, writeLocalProjects } from '@/lib/local-store'
 import { getLocalMediaFile, listLocalMedia, removeLocalMedia, saveLocalMedia, type LocalMediaRecord } from '@/lib/local-media'
+import { TEMPLATE_PRESETS } from '@/lib/template-presets'
 
 export default function StudioPage() {
   const [projects, setProjects] = useState<LocalProject[]>([])
   const [library, setLibrary] = useState<LocalMediaRecord[]>([])
-  const [previewUrl, setPreviewUrl] = useState<string | null>(null)
+  const [libraryPreviewUrl, setLibraryPreviewUrl] = useState<string | null>(null)
+  const [stageMediaUrl, setStageMediaUrl] = useState<string | null>(null)
+  const [stageAudioUrl, setStageAudioUrl] = useState<string | null>(null)
   const [name, setName] = useState('Proyecto MentaCut')
   const [format, setFormat] = useState<LocalProject['format']>('9:16')
   const [activeId, setActiveId] = useState<string | null>(null)
   const [selectedMediaId, setSelectedMediaId] = useState<string | null>(null)
+  const [selectedClipId, setSelectedClipId] = useState<string | null>(null)
+  const [timelineZoom, setTimelineZoom] = useState(4)
 
   useEffect(() => {
     const initialProjects = readLocalProjects()
     setProjects(initialProjects)
     setActiveId(initialProjects[0]?.id ?? null)
+    setSelectedClipId(initialProjects[0]?.clips[0]?.id ?? null)
     void refreshLibrary()
   }, [])
+
+  const active = useMemo(() => projects.find((item) => item.id === activeId) ?? null, [projects, activeId])
+  const selectedMedia = useMemo(() => library.find((item) => item.id === selectedMediaId) ?? null, [library, selectedMediaId])
+  const selectedClip = useMemo(() => active?.clips.find((clip) => clip.id === selectedClipId) ?? active?.clips[0] ?? null, [active, selectedClipId])
+  const selectedTemplate = useMemo(() => TEMPLATE_PRESETS.find((item) => item.id === selectedClip?.templateId) ?? TEMPLATE_PRESETS[0], [selectedClip])
 
   useEffect(() => {
     let revokedUrl: string | null = null
     async function loadPreview() {
       if (!selectedMediaId) {
-        setPreviewUrl(null)
+        setLibraryPreviewUrl(null)
         return
       }
       const file = await getLocalMediaFile(selectedMediaId)
       if (!file) {
-        setPreviewUrl(null)
+        setLibraryPreviewUrl(null)
         return
       }
       const url = URL.createObjectURL(file)
       revokedUrl = url
-      setPreviewUrl(url)
+      setLibraryPreviewUrl(url)
     }
     void loadPreview()
     return () => {
@@ -43,8 +54,41 @@ export default function StudioPage() {
     }
   }, [selectedMediaId])
 
-  const active = useMemo(() => projects.find((item) => item.id === activeId) ?? null, [projects, activeId])
-  const selectedMedia = useMemo(() => library.find((item) => item.id === selectedMediaId) ?? null, [library, selectedMediaId])
+  useEffect(() => {
+    let revokedMedia: string | null = null
+    let revokedAudio: string | null = null
+    async function loadStage() {
+      if (!selectedClip?.mediaId) {
+        setStageMediaUrl(null)
+      } else {
+        const mediaFile = await getLocalMediaFile(selectedClip.mediaId)
+        if (mediaFile) {
+          const url = URL.createObjectURL(mediaFile)
+          revokedMedia = url
+          setStageMediaUrl(url)
+        } else {
+          setStageMediaUrl(null)
+        }
+      }
+      if (!selectedClip?.audioMediaId) {
+        setStageAudioUrl(null)
+      } else {
+        const audioFile = await getLocalMediaFile(selectedClip.audioMediaId)
+        if (audioFile) {
+          const url = URL.createObjectURL(audioFile)
+          revokedAudio = url
+          setStageAudioUrl(url)
+        } else {
+          setStageAudioUrl(null)
+        }
+      }
+    }
+    void loadStage()
+    return () => {
+      if (revokedMedia) URL.revokeObjectURL(revokedMedia)
+      if (revokedAudio) URL.revokeObjectURL(revokedAudio)
+    }
+  }, [selectedClip])
 
   async function refreshLibrary() {
     const items = await listLocalMedia()
@@ -62,6 +106,7 @@ export default function StudioPage() {
     const updated = [next, ...projects]
     persistProjects(updated)
     setActiveId(next.id)
+    setSelectedClipId(next.clips[0]?.id ?? null)
   }
 
   async function handleUpload(event: React.ChangeEvent<HTMLInputElement>) {
@@ -77,16 +122,13 @@ export default function StudioPage() {
     if (!selectedMediaId) return
     await removeLocalMedia(selectedMediaId)
     setSelectedMediaId(null)
-    setPreviewUrl(null)
+    setLibraryPreviewUrl(null)
     await refreshLibrary()
   }
 
   function updateActiveProject(mutator: (project: LocalProject) => LocalProject) {
     if (!active) return
-    const updated = projects.map((project) => {
-      if (project.id !== active.id) return project
-      return touchProject(mutator(project))
-    })
+    const updated = projects.map((project) => project.id !== active.id ? project : touchProject(mutator(project)))
     persistProjects(updated)
   }
 
@@ -106,9 +148,15 @@ export default function StudioPage() {
       title: selectedMedia.name.replace(/\.[^.]+$/, ''),
       start: Number(lastEnd.toFixed(2)),
       end: Number((lastEnd + duration).toFixed(2)),
-      mediaId: selectedMedia.id,
+      mediaId: selectedMedia.kind === 'audio' ? null : selectedMedia.id,
+      audioMediaId: selectedMedia.kind === 'audio' ? selectedMedia.id : null,
+      templateId: 'hook-crystal',
+      frameX: 50,
+      frameY: 50,
+      frameScale: 1,
     }
     updateActiveProject((project) => ({ ...project, clips: [...project.clips, nextClip] }))
+    setSelectedClipId(nextClip.id)
   }
 
   function addEmptyClip() {
@@ -120,12 +168,38 @@ export default function StudioPage() {
       start: Number(lastEnd.toFixed(2)),
       end: Number((lastEnd + 4).toFixed(2)),
       mediaId: null,
+      audioMediaId: null,
+      templateId: 'hook-crystal',
+      frameX: 50,
+      frameY: 50,
+      frameScale: 1,
     }
     updateActiveProject((project) => ({ ...project, clips: [...project.clips, nextClip] }))
+    setSelectedClipId(nextClip.id)
   }
 
   function deleteClip(clipId: string) {
-    updateActiveProject((project) => ({ ...project, clips: project.clips.filter((clip) => clip.id !== clipId) }))
+    if (!active) return
+    const remaining = active.clips.filter((clip) => clip.id !== clipId)
+    updateActiveProject((project) => ({ ...project, clips: remaining }))
+    setSelectedClipId(remaining[0]?.id ?? null)
+  }
+
+  function assignSelectedMediaToClip() {
+    if (!selectedClip || !selectedMedia) return
+    if (selectedMedia.kind === 'audio') {
+      updateClip(selectedClip.id, { audioMediaId: selectedMedia.id })
+      return
+    }
+    updateClip(selectedClip.id, { mediaId: selectedMedia.id, title: selectedMedia.name.replace(/\.[^.]+$/, '') })
+  }
+
+  function zoomWidth(clip: LocalClip) {
+    return `${Math.max((clip.end - clip.start) * timelineZoom * 10, 36)}px`
+  }
+
+  function zoomLeft(clip: LocalClip) {
+    return `${clip.start * timelineZoom * 10}px`
   }
 
   return (
@@ -151,11 +225,10 @@ export default function StudioPage() {
             </select>
             <button className="btn btn-primary" onClick={createLocalProject}>Guardar en navegador</button>
           </div>
-
           <div className="project-list">
             {projects.length === 0 ? <div className="empty">Aún no hay proyectos locales.</div> : null}
             {projects.map((project) => (
-              <button key={project.id} className={`project-item ${project.id === activeId ? 'active' : ''}`} onClick={() => setActiveId(project.id)}>
+              <button key={project.id} className={`project-item ${project.id === activeId ? 'active' : ''}`} onClick={() => { setActiveId(project.id); setSelectedClipId(project.clips[0]?.id ?? null) }}>
                 <strong>{project.name}</strong>
                 <div className="timeline-label">{project.format} · {project.clips.length} clips</div>
               </button>
@@ -166,7 +239,7 @@ export default function StudioPage() {
         <section className="studio-main">
           <div className="panel toolbar">
             <div>
-              <div className="eyebrow">Base local-first</div>
+              <div className="eyebrow">Editor local-first</div>
               <h1 className="section-title">{active?.name ?? 'Sin proyecto activo'}</h1>
             </div>
             <div className="action-row">
@@ -174,6 +247,7 @@ export default function StudioPage() {
                 <input type="file" multiple accept="video/*,image/*,audio/*" hidden onChange={handleUpload} />
                 Subir media local
               </label>
+              <button className="btn" onClick={assignSelectedMediaToClip} disabled={!selectedClip || !selectedMedia}>Asignar al clip</button>
               <button className="btn" onClick={addClipFromSelectedMedia} disabled={!active || !selectedMedia}>Añadir clip desde media</button>
               <button className="btn" onClick={addEmptyClip} disabled={!active}>Añadir clip vacío</button>
             </div>
@@ -181,16 +255,31 @@ export default function StudioPage() {
 
           <div className="studio-grid-2">
             <div className="panel stage">
-              <div className="stage-preview media-preview-box">
-                {selectedMedia?.kind === 'video' && previewUrl ? <video className="media-preview" src={previewUrl} controls playsInline /> : null}
-                {selectedMedia?.kind === 'image' && previewUrl ? <img className="media-preview" src={previewUrl} alt={selectedMedia.name} /> : null}
-                {selectedMedia?.kind === 'audio' && previewUrl ? <audio className="audio-preview" src={previewUrl} controls /> : null}
-                {!selectedMedia ? <div className="empty media-empty">Sube un vídeo, imagen o audio y quedará guardado localmente en este navegador.</div> : null}
+              <div className="row-head">
+                <h2 className="section-title">Preview del clip</h2>
+                <div className="timeline-label">{selectedTemplate?.name ?? 'Sin plantilla'}</div>
               </div>
-              <div className="kv">
-                <div className="panel metric"><div className="eyebrow">Formato</div><strong>{active?.format ?? '—'}</strong></div>
-                <div className="panel metric"><div className="eyebrow">Media local</div><strong>{library.length}</strong></div>
+              <div className="stage-preview stage-frame">
+                {selectedClip?.mediaId && stageMediaUrl ? (
+                  selectedMedia?.kind === 'image' ? null : null
+                ) : null}
+                {selectedClip && stageMediaUrl ? (
+                  <div className="stage-media-layer" style={{ left: `${selectedClip.frameX}%`, top: `${selectedClip.frameY}%`, transform: `translate(-50%, -50%) scale(${selectedClip.frameScale})` }}>
+                    {library.find((item) => item.id === selectedClip.mediaId)?.kind === 'image' ? <img className="media-preview" src={stageMediaUrl} alt={selectedClip.title} /> : <video className="media-preview" src={stageMediaUrl} controls playsInline />}
+                  </div>
+                ) : <div className="empty media-empty">Selecciona un clip y asígnale media para ver el encuadre real.</div>}
+                <div className="stage-caption panel-template-badge" style={{ borderColor: selectedTemplate?.accent ?? '#59ffd3' }}>{selectedTemplate?.badge ?? 'TEMPLATE'}</div>
               </div>
+              {selectedClip?.audioMediaId && stageAudioUrl ? <audio className="audio-preview" src={stageAudioUrl} controls /> : null}
+              {selectedClip ? (
+                <div className="editor-grid-2">
+                  <label className="form"><span className="timeline-label">Reencuadre X</span><input className="input" type="range" min="0" max="100" value={selectedClip.frameX} onChange={(event) => updateClip(selectedClip.id, { frameX: Number(event.target.value) })} /></label>
+                  <label className="form"><span className="timeline-label">Reencuadre Y</span><input className="input" type="range" min="0" max="100" value={selectedClip.frameY} onChange={(event) => updateClip(selectedClip.id, { frameY: Number(event.target.value) })} /></label>
+                  <label className="form"><span className="timeline-label">Escala</span><input className="input" type="range" min="0.6" max="1.8" step="0.01" value={selectedClip.frameScale} onChange={(event) => updateClip(selectedClip.id, { frameScale: Number(event.target.value) })} /></label>
+                  <label className="form"><span className="timeline-label">Trim inicio</span><input className="input" type="range" min="0" max={selectedClip.end > 0 ? selectedClip.end - 0.1 : 0} step="0.1" value={selectedClip.start} onChange={(event) => updateClip(selectedClip.id, { start: Number(event.target.value) })} /></label>
+                  <label className="form"><span className="timeline-label">Trim fin</span><input className="input" type="range" min={selectedClip.start + 0.1} max={Math.max(selectedClip.end + 10, selectedClip.start + 0.1)} step="0.1" value={selectedClip.end} onChange={(event) => updateClip(selectedClip.id, { end: Number(event.target.value) })} /></label>
+                </div>
+              ) : null}
             </div>
 
             <div className="panel stage media-library-panel">
@@ -207,21 +296,60 @@ export default function StudioPage() {
                   </button>
                 ))}
               </div>
+              <div className="stage-preview media-preview-box small-preview-box">
+                {selectedMedia?.kind === 'video' && libraryPreviewUrl ? <video className="media-preview" src={libraryPreviewUrl} controls playsInline /> : null}
+                {selectedMedia?.kind === 'image' && libraryPreviewUrl ? <img className="media-preview" src={libraryPreviewUrl} alt={selectedMedia.name} /> : null}
+                {selectedMedia?.kind === 'audio' && libraryPreviewUrl ? <audio className="audio-preview" src={libraryPreviewUrl} controls /> : null}
+              </div>
             </div>
           </div>
 
           <div className="panel timeline">
-            <h2 className="section-title">Timeline editable base</h2>
-            {(active?.clips ?? []).map((clip) => (
-              <div key={clip.id} className="timeline-edit-row">
-                <input className="input" value={clip.title} onChange={(event) => updateClip(clip.id, { title: event.target.value })} />
-                <input className="input" type="number" step="0.1" value={clip.start} onChange={(event) => updateClip(clip.id, { start: Number(event.target.value) })} />
-                <input className="input" type="number" step="0.1" value={clip.end} onChange={(event) => updateClip(clip.id, { end: Number(event.target.value) })} />
-                <div className="timeline-bar"><span style={{ left: `${clip.start * 4}%`, width: `${Math.max((clip.end - clip.start) * 4, 12)}%` }} /></div>
-                <button className="btn" onClick={() => deleteClip(clip.id)}>Borrar</button>
+            <div className="row-head">
+              <h2 className="section-title">Timeline editable</h2>
+              <label className="zoom-control"><span className="timeline-label">Zoom</span><input type="range" min="2" max="12" step="1" value={timelineZoom} onChange={(event) => setTimelineZoom(Number(event.target.value))} /></label>
+            </div>
+            <div className="timeline-scroll">
+              {(active?.clips ?? []).map((clip) => (
+                <button key={clip.id} className={`timeline-track-card ${clip.id === selectedClip?.id ? 'active' : ''}`} onClick={() => setSelectedClipId(clip.id)}>
+                  <div className="timeline-track-meta">
+                    <strong>{clip.title}</strong>
+                    <span>{clip.start.toFixed(1)}s → {clip.end.toFixed(1)}s</span>
+                  </div>
+                  <div className="timeline-track-rail">
+                    <span style={{ left: zoomLeft(clip), width: zoomWidth(clip) }} />
+                  </div>
+                </button>
+              ))}
+            </div>
+            {selectedClip ? (
+              <div className="timeline-edit-row advanced-row">
+                <input className="input" value={selectedClip.title} onChange={(event) => updateClip(selectedClip.id, { title: event.target.value })} />
+                <input className="input" type="number" step="0.1" value={selectedClip.start} onChange={(event) => updateClip(selectedClip.id, { start: Number(event.target.value) })} />
+                <input className="input" type="number" step="0.1" value={selectedClip.end} onChange={(event) => updateClip(selectedClip.id, { end: Number(event.target.value) })} />
+                <button className="btn" onClick={() => deleteClip(selectedClip.id)}>Borrar clip</button>
               </div>
-            ))}
-            {!active ? <div className="empty">Crea un proyecto local para empezar.</div> : null}
+            ) : null}
+          </div>
+
+          <div className="panel timeline">
+            <div className="row-head">
+              <h2 className="section-title">Plantillas base</h2>
+              <div className="timeline-label">Previews iniciales aplicables al clip activo</div>
+            </div>
+            <div className="template-grid">
+              {TEMPLATE_PRESETS.map((template) => (
+                <button key={template.id} className={`template-card ${selectedClip?.templateId === template.id ? 'active' : ''}`} onClick={() => selectedClip ? updateClip(selectedClip.id, { templateId: template.id }) : undefined}>
+                  <div className="template-preview" style={{ background: template.previewGradient }}>
+                    <div className="template-badge" style={{ borderColor: template.accent }}>{template.badge}</div>
+                    <div className="template-copy-top">{template.headline}</div>
+                    <div className="template-copy-bottom">{template.caption}</div>
+                  </div>
+                  <strong>{template.name}</strong>
+                  <div className="timeline-label">{template.category}</div>
+                </button>
+              ))}
+            </div>
           </div>
         </section>
       </main>
