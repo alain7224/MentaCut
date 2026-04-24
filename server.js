@@ -8,7 +8,15 @@ const { stmts } = require('./db');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
-const BASE_URL = process.env.BASE_URL || `http://localhost:${PORT}`;
+
+// Build the base URL from the request (supports reverse-proxied deployments).
+// Falls back to BASE_URL env var, then to localhost.
+function getBaseUrl(req) {
+  if (process.env.BASE_URL) return process.env.BASE_URL.replace(/\/$/, '');
+  const proto = req.headers['x-forwarded-proto'] || req.protocol || 'http';
+  const host  = req.headers['x-forwarded-host']  || req.get('host') || `localhost:${PORT}`;
+  return `${proto}://${host}`;
+}
 
 // Nanoid with URL-safe alphabet, 7 characters
 const nanoid = customAlphabet('0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz', 7);
@@ -24,20 +32,20 @@ app.post('/api/shorten', (req, res) => {
   const { url } = req.body;
 
   if (!url || typeof url !== 'string') {
-    return res.status(400).json({ error: 'URL is required.' });
+    return res.status(400).json({ error: 'La URL es obligatoria.' });
   }
 
   const trimmed = url.trim();
 
   if (!validUrl.isWebUri(trimmed)) {
-    return res.status(400).json({ error: 'Please enter a valid URL (including http:// or https://).' });
+    return res.status(400).json({ error: 'Por favor, introduce una URL válida (incluyendo http:// o https://).' });
   }
 
   // Re-use an existing short code for the same original URL
   const existing = stmts.findByOriginal.get(trimmed);
   if (existing) {
     return res.json({
-      short_url: `${BASE_URL}/${existing.code}`,
+      short_url: `${getBaseUrl(req)}/${existing.code}`,
       code: existing.code,
       original: existing.original,
       clicks: existing.clicks,
@@ -51,14 +59,14 @@ app.post('/api/shorten', (req, res) => {
     code = nanoid();
     attempts++;
     if (attempts > 10) {
-      return res.status(500).json({ error: 'Could not generate a unique code. Please try again.' });
+      return res.status(500).json({ error: 'No se pudo generar un código único. Inténtalo de nuevo.' });
     }
   } while (stmts.findByCode.get(code));
 
   stmts.insert.run(code, trimmed);
 
   return res.status(201).json({
-    short_url: `${BASE_URL}/${code}`,
+    short_url: `${getBaseUrl(req)}/${code}`,
     code,
     original: trimmed,
     clicks: 0,
@@ -72,7 +80,7 @@ app.post('/api/shorten', (req, res) => {
 app.get('/api/stats/:code', (req, res) => {
   const row = stmts.findByCode.get(req.params.code);
   if (!row) {
-    return res.status(404).json({ error: 'Short URL not found.' });
+    return res.status(404).json({ error: 'Enlace corto no encontrado.' });
   }
   return res.json({
     code: row.code,
@@ -114,8 +122,11 @@ app.get('/:code', (req, res) => {
   return res.redirect(301, row.original);
 });
 
-app.listen(PORT, () => {
-  console.log(`MentaCut running at ${BASE_URL}`);
-});
+if (require.main === module) {
+  const baseUrl = process.env.BASE_URL || `http://localhost:${PORT}`;
+  app.listen(PORT, () => {
+    console.log(`MentaCut running at ${baseUrl}`);
+  });
+}
 
 module.exports = app; // for testing

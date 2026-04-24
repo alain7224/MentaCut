@@ -137,6 +137,7 @@
     resultStatsLink.href       = '/api/stats/' + data.code;
 
     try {
+      qrCanvas.style.display = '';
       QRCode.toCanvas(qrCanvas, data.short_url, { width: 128, margin: 4 });
     } catch (e) {
       qrCanvas.style.display = 'none';

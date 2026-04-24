@@ -15,15 +15,14 @@ db.exec(`
   CREATE TABLE IF NOT EXISTS urls (
     id        INTEGER PRIMARY KEY AUTOINCREMENT,
     code      TEXT    NOT NULL UNIQUE,
-    original  TEXT    NOT NULL,
+    original  TEXT    NOT NULL UNIQUE,
     clicks    INTEGER NOT NULL DEFAULT 0,
     created_at DATETIME NOT NULL DEFAULT (datetime('now'))
   );
-  CREATE INDEX IF NOT EXISTS idx_urls_code ON urls(code);
 `);
 
 const stmts = {
-  insert: db.prepare('INSERT INTO urls (code, original) VALUES (?, ?)'),
+  insert: db.prepare('INSERT OR IGNORE INTO urls (code, original) VALUES (?, ?)'),
   findByCode: db.prepare('SELECT * FROM urls WHERE code = ?'),
   findByOriginal: db.prepare('SELECT * FROM urls WHERE original = ? LIMIT 1'),
   incrementClicks: db.prepare('UPDATE urls SET clicks = clicks + 1 WHERE code = ?'),

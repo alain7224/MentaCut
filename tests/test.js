@@ -11,11 +11,9 @@ process.env.PORT = '0'; // let OS pick a free port
 const http = require('http');
 const assert = require('assert');
 
-// Patch listen to get the actual port
+// server.js only calls app.listen() when run as the main module (require.main === module),
+// so importing it here does NOT start a server – giving us full isolation.
 const app = require('../server');
-
-// The server is already listening – find the port from the test-server
-// We re-create a fresh server for isolation
 const testServer = http.createServer(app);
 
 function request(opts, body) {

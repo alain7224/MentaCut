@@ -1,17 +1,28 @@
 {
   "name": "mentacut",
-  "version": "1.0.0",
-  "description": "MentaCut - Fast & free URL shortener",
-  "main": "server.js",
+  "version": "0.1.0",
+  "private": true,
+  "license": "MIT",
   "scripts": {
-    "start": "node server.js",
-    "dev": "node server.js",
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "start:api": "node server.js",
     "test": "node tests/test.js"
   },
   "dependencies": {
     "better-sqlite3": "^9.4.3",
     "express": "^4.18.2",
     "nanoid": "^3.3.7",
+    "next": "^16.2.4",
+    "react": "^19.2.5",
+    "react-dom": "^19.2.5",
     "valid-url": "^1.0.9"
+  },
+  "devDependencies": {
+    "@types/node": "24.9.1",
+    "@types/react": "19.2.2",
+    "@types/react-dom": "19.2.2",
+    "typescript": "5.9.3"
   }
 }
