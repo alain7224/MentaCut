@@ -1,8 +1,9 @@
 'use client'
 
 import Link from 'next/link'
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { createProject, readLocalProjects, writeLocalProjects, type ProjectFormat } from '@/lib/local-store'
+import { readLocalPreferences } from '@/lib/local-preferences'
 import { TEMPLATE_PRESETS } from '@/lib/template-presets'
 
 const FORMATS: ProjectFormat[] = ['9:16', '1:1', '4:5', '16:9']
@@ -12,6 +13,11 @@ export default function NewProjectWizardPage() {
   const [format, setFormat] = useState<ProjectFormat>('9:16')
   const [templateId, setTemplateId] = useState(TEMPLATE_PRESETS[0]?.id ?? '')
   const [status, setStatus] = useState('')
+
+  useEffect(() => {
+    const preferences = readLocalPreferences()
+    setFormat(preferences.defaultProjectFormat)
+  }, [])
 
   const selectedTemplate = useMemo(
     () => TEMPLATE_PRESETS.find((item) => item.id === templateId) ?? TEMPLATE_PRESETS[0],
@@ -45,6 +51,7 @@ export default function NewProjectWizardPage() {
         <nav className="nav">
           <Link href="/" className="nav-link">Inicio</Link>
           <Link href="/studio/workspace" className="nav-link">Workspace</Link>
+          <Link href="/studio/settings" className="nav-link">Ajustes</Link>
           <Link href="/studio/projects" className="nav-link">Proyectos</Link>
           <Link href="/studio" className="nav-link">Estudio</Link>
         </nav>
@@ -58,7 +65,7 @@ export default function NewProjectWizardPage() {
             <p className="sub">
               Elige nombre, formato y una plantilla inicial para arrancar con una estructura más útil desde el minuto uno.
             </p>
-            <div className="timeline-label">{status || 'El proyecto se guardará en la lista local del navegador.'}</div>
+            <div className="timeline-label">{status || 'El formato inicial respeta la preferencia local guardada.'}</div>
           </div>
         </section>
 
