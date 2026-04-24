@@ -14,6 +14,7 @@ export type LocalClip = {
   headlineText: string
   captionText: string
   stickerId: string | null
+  graphicOverlayId: string | null
 }
 
 export type LocalProject = {
@@ -58,6 +59,7 @@ function createBaseClip(title: string, start: number, end: number): LocalClip {
     headlineText: 'Gancho fuerte',
     captionText: 'Texto editable del clip',
     stickerId: null,
+    graphicOverlayId: null,
   }
 }
 
