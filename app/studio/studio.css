@@ -1,0 +1,128 @@
+.stage-media-layer {
+  cursor: grab;
+}
+
+.headline-overlay {
+  position: absolute;
+  left: 16px;
+  right: 16px;
+  top: 56px;
+  font-size: clamp(1.1rem, 2vw, 1.8rem);
+  font-weight: 800;
+  text-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
+}
+
+.caption-overlay {
+  position: absolute;
+  left: 16px;
+  right: 16px;
+  bottom: 28px;
+  color: rgba(245, 248, 255, 0.92);
+  font-size: 14px;
+  line-height: 1.45;
+  text-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
+}
+
+.sticker-overlay {
+  position: absolute;
+  right: 16px;
+  top: 16px;
+  min-height: 36px;
+  padding: 8px 12px;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  background: rgba(255, 255, 255, 0.10);
+  font-weight: 700;
+  backdrop-filter: blur(16px);
+}
+
+.trim-panel {
+  display: grid;
+  gap: 10px;
+}
+
+.trim-bar {
+  position: relative;
+  height: 16px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.08);
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.trim-bar span {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  border-radius: 999px;
+  background: linear-gradient(90deg, rgba(89, 255, 211, 0.95), rgba(123, 199, 255, 0.95));
+  box-shadow: 0 6px 18px rgba(89, 255, 211, 0.25);
+}
+
+.mini-title {
+  margin: 0;
+  font-size: 1rem;
+}
+
+.input-readonly {
+  display: flex;
+  align-items: center;
+  min-height: 52px;
+}
+
+.preset-chip-wrap {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.preset-chip {
+  min-height: 36px;
+  padding: 0 12px;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: rgba(255, 255, 255, 0.04);
+  color: inherit;
+}
+
+.sticker-grid {
+  display: grid;
+  gap: 10px;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.sticker-card {
+  min-height: 84px;
+  border-radius: 18px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: rgba(255, 255, 255, 0.04);
+  color: inherit;
+  display: grid;
+  place-items: center;
+  gap: 4px;
+  padding: 10px;
+  text-align: center;
+}
+
+.sticker-card.active {
+  border-color: rgba(89, 255, 211, 0.38);
+  background: rgba(89, 255, 211, 0.10);
+}
+
+.clear-card {
+  grid-column: 1 / -1;
+  min-height: 44px;
+}
+
+@media (max-width: 980px) {
+  .sticker-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 640px) {
+  .headline-overlay {
+    font-size: 1rem;
+    top: 52px;
+  }
+}
