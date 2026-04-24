@@ -47,6 +47,7 @@ export default function StudioLibraryPage() {
         <nav className="nav">
           <Link href="/" className="nav-link">Inicio</Link>
           <Link href="/studio" className="nav-link">Estudio</Link>
+          <Link href="/studio/media" className="nav-link">Media</Link>
           <Link href="/studio/backup" className="nav-link">Backup</Link>
         </nav>
       </header>
@@ -61,6 +62,7 @@ export default function StudioLibraryPage() {
             </p>
             <div className="action-row">
               <Link href="/studio" className="btn btn-primary">Abrir estudio</Link>
+              <Link href="/studio/media" className="btn">Abrir media</Link>
               <Link href="/studio/backup" className="btn">Abrir backup</Link>
             </div>
           </div>
