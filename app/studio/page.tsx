@@ -22,12 +22,14 @@ export default function StudioPage() {
   const [selectedMediaId, setSelectedMediaId] = useState<string | null>(null)
   const [selectedClipId, setSelectedClipId] = useState<string | null>(null)
   const [timelineZoom, setTimelineZoom] = useState(4)
+  const [playhead, setPlayhead] = useState(0)
 
   useEffect(() => {
     const initialProjects = readLocalProjects()
     setProjects(initialProjects)
     setActiveId(initialProjects[0]?.id ?? null)
     setSelectedClipId(initialProjects[0]?.clips[0]?.id ?? null)
+    setPlayhead(initialProjects[0]?.clips[0]?.start ?? 0)
     void refreshLibrary()
   }, [])
 
@@ -38,6 +40,17 @@ export default function StudioPage() {
   const selectedSticker = useMemo(() => STICKER_PRESETS.find((item) => item.id === selectedClip?.stickerId) ?? null, [selectedClip])
   const selectedGraphicOverlay = useMemo(() => GRAPHIC_OVERLAY_PRESETS.find((item) => item.id === selectedClip?.graphicOverlayId) ?? null, [selectedClip])
   const selectedClipMedia = useMemo(() => library.find((item) => item.id === selectedClip?.mediaId) ?? null, [library, selectedClip])
+  const timelineDuration = useMemo(() => Math.max(15, ...(active?.clips.map((clip) => clip.end) ?? [0])), [active])
+  const timelinePixelsPerSecond = timelineZoom * 18
+  const timelineContentWidth = Math.max(720, Math.round(timelineDuration * timelinePixelsPerSecond) + 80)
+  const rulerMarks = useMemo(() => Array.from({ length: Math.ceil(timelineDuration) + 1 }, (_, index) => index), [timelineDuration])
+
+  useEffect(() => {
+    if (!active) return
+    if (playhead > timelineDuration) {
+      setPlayhead(timelineDuration)
+    }
+  }, [active, playhead, timelineDuration])
 
   useEffect(() => {
     let revokedUrl: string | null = null
@@ -114,6 +127,7 @@ export default function StudioPage() {
     persistProjects(updated)
     setActiveId(next.id)
     setSelectedClipId(next.clips[0]?.id ?? null)
+    setPlayhead(next.clips[0]?.start ?? 0)
   }
 
   async function handleUpload(event: React.ChangeEvent<HTMLInputElement>) {
@@ -168,6 +182,7 @@ export default function StudioPage() {
     }
     updateActiveProject((project) => ({ ...project, clips: [...project.clips, nextClip] }))
     setSelectedClipId(nextClip.id)
+    setPlayhead(nextClip.start)
   }
 
   function addEmptyClip() {
@@ -191,6 +206,7 @@ export default function StudioPage() {
     }
     updateActiveProject((project) => ({ ...project, clips: [...project.clips, nextClip] }))
     setSelectedClipId(nextClip.id)
+    setPlayhead(nextClip.start)
   }
 
   function deleteClip(clipId: string) {
@@ -198,6 +214,7 @@ export default function StudioPage() {
     const remaining = active.clips.filter((clip) => clip.id !== clipId)
     updateActiveProject((project) => ({ ...project, clips: remaining }))
     setSelectedClipId(remaining[0]?.id ?? null)
+    setPlayhead(remaining[0]?.start ?? 0)
   }
 
   function assignSelectedMediaToClip() {
@@ -218,18 +235,27 @@ export default function StudioPage() {
       clips: [...project.clips.slice(0, index + 1), copy, ...project.clips.slice(index + 1)],
     }))
     setSelectedClipId(copy.id)
+    setPlayhead(copy.start)
   }
 
-  function splitSelectedClip() {
+  function splitSelectedClip(splitTime?: number) {
     if (!active || !selectedClip) return
     const index = active.clips.findIndex((clip) => clip.id === selectedClip.id)
-    const midpoint = Number(((selectedClip.start + selectedClip.end) / 2).toFixed(2))
-    const [first, second] = splitClip(selectedClip, midpoint)
+    const fallback = Number(((selectedClip.start + selectedClip.end) / 2).toFixed(2))
+    const at = splitTime ?? fallback
+    const [first, second] = splitClip(selectedClip, at)
     updateActiveProject((project) => ({
       ...project,
       clips: [...project.clips.slice(0, index), first, second, ...project.clips.slice(index + 1)],
     }))
     setSelectedClipId(first.id)
+    setPlayhead(first.end)
+  }
+
+  function splitAtPlayhead() {
+    if (!selectedClip) return
+    const safe = Math.min(Math.max(playhead, selectedClip.start + 0.1), selectedClip.end - 0.1)
+    splitSelectedClip(Number(safe.toFixed(2)))
   }
 
   function moveSelectedClip(direction: 'left' | 'right') {
@@ -241,11 +267,11 @@ export default function StudioPage() {
   }
 
   function zoomWidth(clip: LocalClip) {
-    return `${Math.max((clip.end - clip.start) * timelineZoom * 10, 36)}px`
+    return `${Math.max((clip.end - clip.start) * timelinePixelsPerSecond, 56)}px`
   }
 
   function zoomLeft(clip: LocalClip) {
-    return `${clip.start * timelineZoom * 10}px`
+    return `${clip.start * timelinePixelsPerSecond}px`
   }
 
   function startFrameDrag(event: React.PointerEvent<HTMLDivElement>) {
@@ -295,6 +321,14 @@ export default function StudioPage() {
     window.addEventListener('pointerup', onUp)
   }
 
+  const playheadLeft = `${Math.min(playhead, timelineDuration) * timelinePixelsPerSecond}px`
+
+  function setPlayheadFromPointer(event: React.PointerEvent<HTMLDivElement>) {
+    const rect = event.currentTarget.getBoundingClientRect()
+    const ratio = Math.min(1, Math.max(0, (event.clientX - rect.left) / rect.width))
+    setPlayhead(Number((ratio * timelineDuration).toFixed(2)))
+  }
+
   return (
     <div className="page-shell">
       <header className="topbar">
@@ -321,7 +355,7 @@ export default function StudioPage() {
           <div className="project-list">
             {projects.length === 0 ? <div className="empty">Aún no hay proyectos locales.</div> : null}
             {projects.map((project) => (
-              <button key={project.id} className={`project-item ${project.id === activeId ? 'active' : ''}`} onClick={() => { setActiveId(project.id); setSelectedClipId(project.clips[0]?.id ?? null) }}>
+              <button key={project.id} className={`project-item ${project.id === activeId ? 'active' : ''}`} onClick={() => { setActiveId(project.id); setSelectedClipId(project.clips[0]?.id ?? null); setPlayhead(project.clips[0]?.start ?? 0) }}>
                 <strong>{project.name}</strong>
                 <div className="timeline-label">{project.format} · {project.clips.length} clips</div>
               </button>
@@ -414,26 +448,59 @@ export default function StudioPage() {
           <div className="panel timeline">
             <div className="row-head">
               <h2 className="section-title">Timeline editable</h2>
-              <label className="zoom-control"><span className="timeline-label">Zoom</span><input type="range" min="2" max="12" step="1" value={timelineZoom} onChange={(event) => setTimelineZoom(Number(event.target.value))} /></label>
+              <div className="timeline-readout">Playhead: {playhead.toFixed(2)}s</div>
             </div>
             <div className="clip-command-row">
               <button className="btn" onClick={() => moveSelectedClip('left')} disabled={!selectedClip}>Mover izquierda</button>
               <button className="btn" onClick={() => moveSelectedClip('right')} disabled={!selectedClip}>Mover derecha</button>
               <button className="btn" onClick={duplicateSelectedClip} disabled={!selectedClip}>Duplicar</button>
-              <button className="btn" onClick={splitSelectedClip} disabled={!selectedClip}>Dividir</button>
+              <button className="btn" onClick={() => splitSelectedClip()} disabled={!selectedClip}>Dividir centro</button>
+              <button className="btn" onClick={splitAtPlayhead} disabled={!selectedClip}>Dividir en playhead</button>
+              <button className="btn" onClick={() => setPlayhead(selectedClip?.start ?? 0)} disabled={!selectedClip}>Ir al clip</button>
+              <label className="zoom-control"><span className="timeline-label">Zoom</span><input type="range" min="2" max="12" step="1" value={timelineZoom} onChange={(event) => setTimelineZoom(Number(event.target.value))} /></label>
             </div>
-            <div className="timeline-scroll">
-              {(active?.clips ?? []).map((clip) => (
-                <button key={clip.id} className={`timeline-track-card ${clip.id === selectedClip?.id ? 'active' : ''}`} onClick={() => setSelectedClipId(clip.id)}>
-                  <div className="timeline-track-meta">
-                    <strong>{clip.title}</strong>
-                    <span>{clip.start.toFixed(1)}s → {clip.end.toFixed(1)}s</span>
+            <div className="timeline-board">
+              <div className="timeline-ruler" style={{ width: `${timelineContentWidth}px` }} onPointerDown={setPlayheadFromPointer}>
+                {rulerMarks.map((mark) => (
+                  <div key={mark} className="ruler-mark" style={{ left: `${mark * timelinePixelsPerSecond}px` }}>
+                    <span>{mark}s</span>
                   </div>
-                  <div className="timeline-track-rail">
-                    <span style={{ left: zoomLeft(clip), width: zoomWidth(clip) }} />
-                  </div>
-                </button>
-              ))}
+                ))}
+                <div className="timeline-playhead" style={{ left: playheadLeft }} />
+              </div>
+              <div className="timeline-lane-row">
+                <div className="lane-label">Vídeo</div>
+                <div className="lane-track" style={{ width: `${timelineContentWidth}px` }} onPointerDown={setPlayheadFromPointer}>
+                  {(active?.clips ?? []).map((clip) => (
+                    <button key={clip.id} className={`lane-clip lane-clip-video ${clip.id === selectedClip?.id ? 'active' : ''}`} style={{ left: zoomLeft(clip), width: zoomWidth(clip) }} onClick={() => { setSelectedClipId(clip.id); setPlayhead(clip.start) }}>
+                      {clip.title}
+                    </button>
+                  ))}
+                  <div className="timeline-playhead lane-playhead" style={{ left: playheadLeft }} />
+                </div>
+              </div>
+              <div className="timeline-lane-row">
+                <div className="lane-label">Audio</div>
+                <div className="lane-track" style={{ width: `${timelineContentWidth}px` }} onPointerDown={setPlayheadFromPointer}>
+                  {(active?.clips.filter((clip) => clip.audioMediaId) ?? []).map((clip) => (
+                    <button key={clip.id} className={`lane-clip lane-clip-audio ${clip.id === selectedClip?.id ? 'active' : ''}`} style={{ left: zoomLeft(clip), width: zoomWidth(clip) }} onClick={() => { setSelectedClipId(clip.id); setPlayhead(clip.start) }}>
+                      Audio · {clip.title}
+                    </button>
+                  ))}
+                  <div className="timeline-playhead lane-playhead" style={{ left: playheadLeft }} />
+                </div>
+              </div>
+              <div className="timeline-lane-row">
+                <div className="lane-label">Texto</div>
+                <div className="lane-track" style={{ width: `${timelineContentWidth}px` }} onPointerDown={setPlayheadFromPointer}>
+                  {(active?.clips ?? []).map((clip) => (
+                    <button key={clip.id} className={`lane-clip lane-clip-text ${clip.id === selectedClip?.id ? 'active' : ''}`} style={{ left: zoomLeft(clip), width: zoomWidth(clip) }} onClick={() => { setSelectedClipId(clip.id); setPlayhead(clip.start) }}>
+                      {clip.headlineText || 'Texto'}
+                    </button>
+                  ))}
+                  <div className="timeline-playhead lane-playhead" style={{ left: playheadLeft }} />
+                </div>
+              </div>
             </div>
             {selectedClip ? (
               <div className="timeline-edit-row advanced-row">
