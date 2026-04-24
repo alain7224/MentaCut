@@ -269,6 +269,31 @@ export default function StudioPage() {
   const trimMax = selectedClip ? Math.max(selectedClip.end + 5, 15) : 15
   const trimLeft = selectedClip ? `${(selectedClip.start / trimMax) * 100}%` : '0%'
   const trimWidth = selectedClip ? `${Math.max(((selectedClip.end - selectedClip.start) / trimMax) * 100, 6)}%` : '0%'
+  const trimEndLeft = selectedClip ? `${(selectedClip.end / trimMax) * 100}%` : '0%'
+
+  function startTrimHandleDrag(side: 'start' | 'end', event: React.PointerEvent<HTMLButtonElement>) {
+    if (!selectedClip) return
+    const bar = event.currentTarget.parentElement
+    if (!bar) return
+    const rect = bar.getBoundingClientRect()
+    const move = (clientX: number) => {
+      const ratio = Math.min(1, Math.max(0, (clientX - rect.left) / rect.width))
+      const time = Number((ratio * trimMax).toFixed(2))
+      if (side === 'start') {
+        updateClip(selectedClip.id, { start: Math.min(time, Number((selectedClip.end - 0.1).toFixed(2))) })
+      } else {
+        updateClip(selectedClip.id, { end: Math.max(time, Number((selectedClip.start + 0.1).toFixed(2))) })
+      }
+    }
+    move(event.clientX)
+    const onMove = (nextEvent: PointerEvent) => move(nextEvent.clientX)
+    const onUp = () => {
+      window.removeEventListener('pointermove', onMove)
+      window.removeEventListener('pointerup', onUp)
+    }
+    window.addEventListener('pointermove', onMove)
+    window.addEventListener('pointerup', onUp)
+  }
 
   return (
     <div className="page-shell">
@@ -350,7 +375,11 @@ export default function StudioPage() {
                   </div>
                   <div className="trim-panel">
                     <div className="row-head"><h3 className="mini-title">Trim visual</h3><div className="timeline-label">{selectedClip.start.toFixed(1)}s → {selectedClip.end.toFixed(1)}s</div></div>
-                    <div className="trim-bar"><span style={{ left: trimLeft, width: trimWidth }} /></div>
+                    <div className="trim-bar interactive-trim">
+                      <span style={{ left: trimLeft, width: trimWidth }} />
+                      <button type="button" className="trim-handle trim-handle-start" style={{ left: trimLeft }} onPointerDown={(event) => startTrimHandleDrag('start', event)} aria-label="Mover inicio" />
+                      <button type="button" className="trim-handle trim-handle-end" style={{ left: trimEndLeft }} onPointerDown={(event) => startTrimHandleDrag('end', event)} aria-label="Mover fin" />
+                    </div>
                     <div className="editor-grid-2">
                       <label className="form"><span className="timeline-label">Inicio</span><input className="input" type="range" min="0" max={Math.max(selectedClip.end - 0.1, 0)} step="0.1" value={selectedClip.start} onChange={(event) => updateClip(selectedClip.id, { start: Number(event.target.value) })} /></label>
                       <label className="form"><span className="timeline-label">Fin</span><input className="input" type="range" min={selectedClip.start + 0.1} max={trimMax} step="0.1" value={selectedClip.end} onChange={(event) => updateClip(selectedClip.id, { end: Number(event.target.value) })} /></label>
