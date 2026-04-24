@@ -142,6 +142,113 @@
   flex-wrap: wrap;
 }
 
+.timeline-readout {
+  color: rgba(245, 248, 255, 0.84);
+  font-weight: 700;
+}
+
+.timeline-board {
+  display: grid;
+  gap: 10px;
+  overflow-x: auto;
+  padding-bottom: 6px;
+}
+
+.timeline-ruler {
+  position: relative;
+  height: 28px;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.ruler-mark {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 1px;
+  background: rgba(255, 255, 255, 0.10);
+}
+
+.ruler-mark span {
+  position: absolute;
+  top: 4px;
+  left: 4px;
+  font-size: 11px;
+  color: rgba(245, 248, 255, 0.72);
+}
+
+.timeline-lane-row {
+  display: grid;
+  grid-template-columns: 76px minmax(0, 1fr);
+  gap: 10px;
+  align-items: center;
+}
+
+.lane-label {
+  color: rgba(245, 248, 255, 0.78);
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.lane-track {
+  position: relative;
+  min-height: 58px;
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  overflow: hidden;
+}
+
+.lane-clip {
+  position: absolute;
+  top: 9px;
+  height: 40px;
+  border-radius: 14px;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  padding: 0 12px;
+  color: inherit;
+  display: inline-flex;
+  align-items: center;
+  justify-content: flex-start;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.18);
+}
+
+.lane-clip-video {
+  background: linear-gradient(135deg, rgba(89, 255, 211, 0.22), rgba(123, 199, 255, 0.22));
+}
+
+.lane-clip-audio {
+  background: linear-gradient(135deg, rgba(123, 199, 255, 0.18), rgba(170, 140, 255, 0.18));
+}
+
+.lane-clip-text {
+  background: linear-gradient(135deg, rgba(255, 207, 107, 0.18), rgba(255, 122, 107, 0.16));
+}
+
+.lane-clip.active {
+  border-color: rgba(89, 255, 211, 0.48);
+  box-shadow: 0 0 0 1px rgba(89, 255, 211, 0.28), 0 10px 24px rgba(0, 0, 0, 0.2);
+}
+
+.timeline-playhead {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 2px;
+  background: linear-gradient(180deg, #ffffff, #59ffd3);
+  box-shadow: 0 0 0 1px rgba(255,255,255,0.12), 0 0 18px rgba(89, 255, 211, 0.22);
+}
+
+.lane-playhead {
+  z-index: 5;
+}
+
 .sticker-grid,
 .overlay-grid {
   display: grid;
@@ -182,6 +289,10 @@
 @media (max-width: 980px) {
   .sticker-grid,
   .overlay-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .timeline-lane-row {
     grid-template-columns: 1fr;
   }
 }
