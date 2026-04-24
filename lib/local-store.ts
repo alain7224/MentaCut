@@ -25,6 +25,13 @@ export type LocalProject = {
   clips: LocalClip[]
 }
 
+export type LocalProjectsBackup = {
+  app: 'MentaCut'
+  version: 1
+  exportedAt: string
+  projects: LocalProject[]
+}
+
 const KEY = 'mentacut.local.projects'
 
 export function readLocalProjects(): LocalProject[] {
@@ -42,6 +49,24 @@ export function readLocalProjects(): LocalProject[] {
 export function writeLocalProjects(projects: LocalProject[]) {
   if (typeof window === 'undefined') return
   window.localStorage.setItem(KEY, JSON.stringify(projects))
+}
+
+export function exportLocalProjectsBackup(projects: LocalProject[]): string {
+  const payload: LocalProjectsBackup = {
+    app: 'MentaCut',
+    version: 1,
+    exportedAt: new Date().toISOString(),
+    projects,
+  }
+  return JSON.stringify(payload, null, 2)
+}
+
+export function parseLocalProjectsBackup(raw: string): LocalProject[] {
+  const parsed = JSON.parse(raw) as Partial<LocalProjectsBackup>
+  if (!parsed || parsed.app !== 'MentaCut' || parsed.version !== 1 || !Array.isArray(parsed.projects)) {
+    throw new Error('Backup inválido de MentaCut')
+  }
+  return parsed.projects as LocalProject[]
 }
 
 function createBaseClip(title: string, start: number, end: number): LocalClip {
