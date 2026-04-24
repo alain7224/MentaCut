@@ -1,9 +1,19 @@
+export type ProjectFormat = '9:16' | '1:1' | '4:5' | '16:9'
+
+export type LocalClip = {
+  id: string
+  title: string
+  start: number
+  end: number
+  mediaId: string | null
+}
+
 export type LocalProject = {
   id: string
   name: string
-  format: '9:16' | '1:1' | '4:5' | '16:9'
+  format: ProjectFormat
   updatedAt: string
-  clips: Array<{ id: string; title: string; start: number; end: number }>
+  clips: LocalClip[]
 }
 
 const KEY = 'mentacut.local.projects'
@@ -25,7 +35,7 @@ export function writeLocalProjects(projects: LocalProject[]) {
   window.localStorage.setItem(KEY, JSON.stringify(projects))
 }
 
-export function createProject(name: string, format: LocalProject['format']): LocalProject {
+export function createProject(name: string, format: ProjectFormat): LocalProject {
   const now = new Date().toISOString()
   return {
     id: crypto.randomUUID(),
@@ -33,8 +43,12 @@ export function createProject(name: string, format: LocalProject['format']): Loc
     format,
     updatedAt: now,
     clips: [
-      { id: crypto.randomUUID(), title: 'Clip 1', start: 0, end: 5 },
-      { id: crypto.randomUUID(), title: 'Clip 2', start: 5, end: 11 },
+      { id: crypto.randomUUID(), title: 'Clip 1', start: 0, end: 5, mediaId: null },
+      { id: crypto.randomUUID(), title: 'Clip 2', start: 5, end: 11, mediaId: null },
     ],
   }
+}
+
+export function touchProject(project: LocalProject): LocalProject {
+  return { ...project, updatedAt: new Date().toISOString() }
 }
