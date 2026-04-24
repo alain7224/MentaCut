@@ -6,6 +6,11 @@ export type LocalClip = {
   start: number
   end: number
   mediaId: string | null
+  audioMediaId: string | null
+  templateId: string | null
+  frameX: number
+  frameY: number
+  frameScale: number
 }
 
 export type LocalProject = {
@@ -35,6 +40,21 @@ export function writeLocalProjects(projects: LocalProject[]) {
   window.localStorage.setItem(KEY, JSON.stringify(projects))
 }
 
+function createBaseClip(title: string, start: number, end: number): LocalClip {
+  return {
+    id: crypto.randomUUID(),
+    title,
+    start,
+    end,
+    mediaId: null,
+    audioMediaId: null,
+    templateId: 'hook-crystal',
+    frameX: 50,
+    frameY: 50,
+    frameScale: 1,
+  }
+}
+
 export function createProject(name: string, format: ProjectFormat): LocalProject {
   const now = new Date().toISOString()
   return {
@@ -43,8 +63,8 @@ export function createProject(name: string, format: ProjectFormat): LocalProject
     format,
     updatedAt: now,
     clips: [
-      { id: crypto.randomUUID(), title: 'Clip 1', start: 0, end: 5, mediaId: null },
-      { id: crypto.randomUUID(), title: 'Clip 2', start: 5, end: 11, mediaId: null },
+      createBaseClip('Clip 1', 0, 5),
+      createBaseClip('Clip 2', 5, 11),
     ],
   }
 }
