@@ -10,6 +10,15 @@
 ## Objetivo del producto
 App de edición de vídeo real, funcional, orientada a formatos cortos sociales, con editor web moderno, subida de media, timeline, plantillas animadas, subtítulos, overlays, audio y export fiable.
 
+## Plataforma objetivo
+- web responsiva real
+- escritorio y móvil
+- Android móvil
+- iPhone usable desde Safari
+- PWA/instalable desde Safari como vía práctica inicial
+- evitar dependencia de firma de App Store en la primera fase
+- arquitectura preparada para que más adelante se pueda separar en app nativa si compensa
+
 ## Requisitos recuperados del chat
 
 ### Plantillas
