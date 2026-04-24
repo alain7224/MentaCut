@@ -17,7 +17,7 @@
 | Capa | Tecnología |
 |------|-----------|
 | Servidor | [Node.js](https://nodejs.org/) + [Express](https://expressjs.com/) |
-| Base de datos | [SQLite](https://www.sqlite.org/) via [better-sqlite3](https://github.com/WiseLibs/better-sqlite3) |
+| Base de datos | [SQLite](https://www.sqlite.org/) vía [better-sqlite3](https://github.com/WiseLibs/better-sqlite3) |
 | Códigos únicos | [nanoid](https://github.com/ai/nanoid) (7 caracteres alfanuméricos) |
 | Frontend | HTML5 / CSS3 / Vanilla JS (sin dependencias externas) |
 | QR | Librería QR pura en JS incluida (`public/qr.js`) |
