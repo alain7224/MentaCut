@@ -354,11 +354,11 @@
   function QR8bitByte(data) {
     this.mode = 4;
     this.data = data;
-    this._bytes = unescape(encodeURIComponent(data));
+    this._bytes = new TextEncoder().encode(data);
   }
   QR8bitByte.prototype = {
     getLength: function () { return this._bytes.length; },
-    write: function (buffer) { for (var i = 0; i < this._bytes.length; i++) buffer.put(this._bytes.charCodeAt(i), 8); },
+    write: function (buffer) { for (var i = 0; i < this._bytes.length; i++) buffer.put(this._bytes[i], 8); },
   };
 
   // ── Public API ─────────────────────────────────────────
