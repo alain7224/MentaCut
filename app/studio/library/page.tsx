@@ -1,41 +1,89 @@
 'use client'
 
 import Link from 'next/link'
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { TEMPLATE_PRESETS } from '@/lib/template-presets'
 import { STICKER_PRESETS, TEXT_PRESET_SUGGESTIONS } from '@/lib/overlay-presets'
 import { GRAPHIC_OVERLAY_PRESETS } from '@/lib/graphic-overlay-presets'
+import { readLocalLibraryFavorites, toggleFavoriteId, writeLocalLibraryFavorites, type LocalLibraryFavorites } from '@/lib/local-library'
 
 type TabKey = 'templates' | 'stickers' | 'overlays' | 'texts'
 
 export default function StudioLibraryPage() {
   const [tab, setTab] = useState<TabKey>('templates')
   const [query, setQuery] = useState('')
+  const [favoritesOnly, setFavoritesOnly] = useState(false)
+  const [favorites, setFavorites] = useState<LocalLibraryFavorites>({
+    templateIds: [],
+    stickerIds: [],
+    overlayIds: [],
+    textValues: [],
+  })
+
+  useEffect(() => {
+    setFavorites(readLocalLibraryFavorites())
+  }, [])
 
   const normalized = query.trim().toLowerCase()
 
   const templateCategories = useMemo(() => ['Todas', ...Array.from(new Set(TEMPLATE_PRESETS.map((item) => item.category)))], [])
   const [templateCategory, setTemplateCategory] = useState('Todas')
 
+  function persistFavorites(next: LocalLibraryFavorites) {
+    setFavorites(next)
+    writeLocalLibraryFavorites(next)
+  }
+
+  function toggleTemplateFavorite(id: string) {
+    persistFavorites({ ...favorites, templateIds: toggleFavoriteId(favorites.templateIds, id) })
+  }
+
+  function toggleStickerFavorite(id: string) {
+    persistFavorites({ ...favorites, stickerIds: toggleFavoriteId(favorites.stickerIds, id) })
+  }
+
+  function toggleOverlayFavorite(id: string) {
+    persistFavorites({ ...favorites, overlayIds: toggleFavoriteId(favorites.overlayIds, id) })
+  }
+
+  function toggleTextFavorite(value: string) {
+    persistFavorites({ ...favorites, textValues: toggleFavoriteId(favorites.textValues, value) })
+  }
+
   const filteredTemplates = useMemo(() => {
     return TEMPLATE_PRESETS.filter((item) => {
       const matchesCategory = templateCategory === 'Todas' || item.category === templateCategory
       const matchesQuery = !normalized || `${item.name} ${item.category} ${item.headline} ${item.caption}`.toLowerCase().includes(normalized)
-      return matchesCategory && matchesQuery
+      const matchesFavorite = !favoritesOnly || favorites.templateIds.includes(item.id)
+      return matchesCategory && matchesQuery && matchesFavorite
     })
-  }, [normalized, templateCategory])
+  }, [normalized, templateCategory, favoritesOnly, favorites.templateIds])
 
   const filteredStickers = useMemo(() => {
-    return STICKER_PRESETS.filter((item) => !normalized || `${item.label} ${item.emoji}`.toLowerCase().includes(normalized))
-  }, [normalized])
+    return STICKER_PRESETS.filter((item) => {
+      const matchesQuery = !normalized || `${item.label} ${item.emoji}`.toLowerCase().includes(normalized)
+      const matchesFavorite = !favoritesOnly || favorites.stickerIds.includes(item.id)
+      return matchesQuery && matchesFavorite
+    })
+  }, [normalized, favoritesOnly, favorites.stickerIds])
 
   const filteredOverlays = useMemo(() => {
-    return GRAPHIC_OVERLAY_PRESETS.filter((item) => !normalized || `${item.name} ${item.symbol} ${item.style}`.toLowerCase().includes(normalized))
-  }, [normalized])
+    return GRAPHIC_OVERLAY_PRESETS.filter((item) => {
+      const matchesQuery = !normalized || `${item.name} ${item.symbol} ${item.style}`.toLowerCase().includes(normalized)
+      const matchesFavorite = !favoritesOnly || favorites.overlayIds.includes(item.id)
+      return matchesQuery && matchesFavorite
+    })
+  }, [normalized, favoritesOnly, favorites.overlayIds])
 
   const filteredTexts = useMemo(() => {
-    return TEXT_PRESET_SUGGESTIONS.filter((item) => !normalized || item.toLowerCase().includes(normalized))
-  }, [normalized])
+    return TEXT_PRESET_SUGGESTIONS.filter((item) => {
+      const matchesQuery = !normalized || item.toLowerCase().includes(normalized)
+      const matchesFavorite = !favoritesOnly || favorites.textValues.includes(item)
+      return matchesQuery && matchesFavorite
+    })
+  }, [normalized, favoritesOnly, favorites.textValues])
+
+  const favoriteCount = favorites.templateIds.length + favorites.stickerIds.length + favorites.overlayIds.length + favorites.textValues.length
 
   return (
     <div className="page-shell">
@@ -64,6 +112,9 @@ export default function StudioLibraryPage() {
               <Link href="/studio" className="btn btn-primary">Abrir estudio</Link>
               <Link href="/studio/media" className="btn">Abrir media</Link>
               <Link href="/studio/backup" className="btn">Abrir backup</Link>
+              <button className={`btn ${favoritesOnly ? 'btn-primary' : ''}`} onClick={() => setFavoritesOnly((current) => !current)}>
+                {favoritesOnly ? 'Mostrando favoritos' : `Favoritos (${favoriteCount})`}
+              </button>
             </div>
           </div>
         </section>
@@ -83,7 +134,7 @@ export default function StudioLibraryPage() {
                 <select className="input" value={templateCategory} onChange={(event) => setTemplateCategory(event.target.value)}>
                   {templateCategories.map((item) => <option key={item} value={item}>{item}</option>)}
                 </select>
-              ) : <div className="input input-readonly">Filtrado activo: {query.trim() || 'sin filtro'}</div>}
+              ) : <div className="input input-readonly">Filtrado activo: {favoritesOnly ? 'solo favoritos' : (query.trim() || 'sin filtro')}</div>}
             </div>
 
             {tab === 'templates' ? (
@@ -97,6 +148,9 @@ export default function StudioLibraryPage() {
                     </div>
                     <strong>{template.name}</strong>
                     <div className="timeline-label">{template.category}</div>
+                    <button className={`btn ${favorites.templateIds.includes(template.id) ? 'btn-primary' : ''}`} onClick={() => toggleTemplateFavorite(template.id)}>
+                      {favorites.templateIds.includes(template.id) ? '★ Favorita' : '☆ Guardar'}
+                    </button>
                   </article>
                 ))}
               </div>
@@ -108,6 +162,9 @@ export default function StudioLibraryPage() {
                   <article key={sticker.id} className="sticker-card">
                     <span>{sticker.emoji}</span>
                     <strong>{sticker.label}</strong>
+                    <button className={`btn ${favorites.stickerIds.includes(sticker.id) ? 'btn-primary' : ''}`} onClick={() => toggleStickerFavorite(sticker.id)}>
+                      {favorites.stickerIds.includes(sticker.id) ? '★ Favorito' : '☆ Guardar'}
+                    </button>
                   </article>
                 ))}
               </div>
@@ -120,6 +177,9 @@ export default function StudioLibraryPage() {
                     <span className={`overlay-symbol overlay-${overlay.style}`}>{overlay.symbol}</span>
                     <strong>{overlay.name}</strong>
                     <div className="timeline-label">{overlay.style}</div>
+                    <button className={`btn ${favorites.overlayIds.includes(overlay.id) ? 'btn-primary' : ''}`} onClick={() => toggleOverlayFavorite(overlay.id)}>
+                      {favorites.overlayIds.includes(overlay.id) ? '★ Favorito' : '☆ Guardar'}
+                    </button>
                   </article>
                 ))}
               </div>
@@ -130,6 +190,9 @@ export default function StudioLibraryPage() {
                 {filteredTexts.map((text) => (
                   <article key={text} className="panel card">
                     <p style={{ margin: 0 }}>{text}</p>
+                    <button className={`btn ${favorites.textValues.includes(text) ? 'btn-primary' : ''}`} onClick={() => toggleTextFavorite(text)}>
+                      {favorites.textValues.includes(text) ? '★ Favorito' : '☆ Guardar'}
+                    </button>
                   </article>
                 ))}
               </div>
