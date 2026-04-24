@@ -5,6 +5,7 @@ import Link from 'next/link'
 import { createProject, touchProject, readLocalProjects, type LocalClip, type LocalProject, writeLocalProjects } from '@/lib/local-store'
 import { getLocalMediaFile, listLocalMedia, removeLocalMedia, saveLocalMedia, type LocalMediaRecord } from '@/lib/local-media'
 import { TEMPLATE_PRESETS } from '@/lib/template-presets'
+import { STICKER_PRESETS, TEXT_PRESET_SUGGESTIONS } from '@/lib/overlay-presets'
 
 export default function StudioPage() {
   const [projects, setProjects] = useState<LocalProject[]>([])
@@ -31,6 +32,8 @@ export default function StudioPage() {
   const selectedMedia = useMemo(() => library.find((item) => item.id === selectedMediaId) ?? null, [library, selectedMediaId])
   const selectedClip = useMemo(() => active?.clips.find((clip) => clip.id === selectedClipId) ?? active?.clips[0] ?? null, [active, selectedClipId])
   const selectedTemplate = useMemo(() => TEMPLATE_PRESETS.find((item) => item.id === selectedClip?.templateId) ?? TEMPLATE_PRESETS[0], [selectedClip])
+  const selectedSticker = useMemo(() => STICKER_PRESETS.find((item) => item.id === selectedClip?.stickerId) ?? null, [selectedClip])
+  const selectedClipMedia = useMemo(() => library.find((item) => item.id === selectedClip?.mediaId) ?? null, [library, selectedClip])
 
   useEffect(() => {
     let revokedUrl: string | null = null
@@ -154,6 +157,9 @@ export default function StudioPage() {
       frameX: 50,
       frameY: 50,
       frameScale: 1,
+      headlineText: 'Gancho fuerte',
+      captionText: 'Texto editable del clip',
+      stickerId: null,
     }
     updateActiveProject((project) => ({ ...project, clips: [...project.clips, nextClip] }))
     setSelectedClipId(nextClip.id)
@@ -173,6 +179,9 @@ export default function StudioPage() {
       frameX: 50,
       frameY: 50,
       frameScale: 1,
+      headlineText: 'Gancho fuerte',
+      captionText: 'Texto editable del clip',
+      stickerId: null,
     }
     updateActiveProject((project) => ({ ...project, clips: [...project.clips, nextClip] }))
     setSelectedClipId(nextClip.id)
@@ -201,6 +210,28 @@ export default function StudioPage() {
   function zoomLeft(clip: LocalClip) {
     return `${clip.start * timelineZoom * 10}px`
   }
+
+  function startFrameDrag(event: React.PointerEvent<HTMLDivElement>) {
+    if (!selectedClip || !stageMediaUrl) return
+    const rect = event.currentTarget.getBoundingClientRect()
+    const move = (clientX: number, clientY: number) => {
+      const x = Math.min(100, Math.max(0, ((clientX - rect.left) / rect.width) * 100))
+      const y = Math.min(100, Math.max(0, ((clientY - rect.top) / rect.height) * 100))
+      updateClip(selectedClip.id, { frameX: Number(x.toFixed(1)), frameY: Number(y.toFixed(1)) })
+    }
+    move(event.clientX, event.clientY)
+    const onMove = (nextEvent: PointerEvent) => move(nextEvent.clientX, nextEvent.clientY)
+    const onUp = () => {
+      window.removeEventListener('pointermove', onMove)
+      window.removeEventListener('pointerup', onUp)
+    }
+    window.addEventListener('pointermove', onMove)
+    window.addEventListener('pointerup', onUp)
+  }
+
+  const trimMax = selectedClip ? Math.max(selectedClip.end + 5, 15) : 15
+  const trimLeft = selectedClip ? `${(selectedClip.start / trimMax) * 100}%` : '0%'
+  const trimWidth = selectedClip ? `${Math.max(((selectedClip.end - selectedClip.start) / trimMax) * 100, 6)}%` : '0%'
 
   return (
     <div className="page-shell">
@@ -259,26 +290,35 @@ export default function StudioPage() {
                 <h2 className="section-title">Preview del clip</h2>
                 <div className="timeline-label">{selectedTemplate?.name ?? 'Sin plantilla'}</div>
               </div>
-              <div className="stage-preview stage-frame">
-                {selectedClip?.mediaId && stageMediaUrl ? (
-                  selectedMedia?.kind === 'image' ? null : null
-                ) : null}
+              <div className="stage-preview stage-frame" onPointerDown={startFrameDrag}>
                 {selectedClip && stageMediaUrl ? (
                   <div className="stage-media-layer" style={{ left: `${selectedClip.frameX}%`, top: `${selectedClip.frameY}%`, transform: `translate(-50%, -50%) scale(${selectedClip.frameScale})` }}>
-                    {library.find((item) => item.id === selectedClip.mediaId)?.kind === 'image' ? <img className="media-preview" src={stageMediaUrl} alt={selectedClip.title} /> : <video className="media-preview" src={stageMediaUrl} controls playsInline />}
+                    {selectedClipMedia?.kind === 'image' ? <img className="media-preview" src={stageMediaUrl} alt={selectedClip.title} /> : <video className="media-preview" src={stageMediaUrl} controls playsInline />}
                   </div>
                 ) : <div className="empty media-empty">Selecciona un clip y asígnale media para ver el encuadre real.</div>}
                 <div className="stage-caption panel-template-badge" style={{ borderColor: selectedTemplate?.accent ?? '#59ffd3' }}>{selectedTemplate?.badge ?? 'TEMPLATE'}</div>
+                {selectedClip ? <div className="headline-overlay">{selectedClip.headlineText}</div> : null}
+                {selectedClip ? <div className="caption-overlay">{selectedClip.captionText}</div> : null}
+                {selectedSticker ? <div className="sticker-overlay">{selectedSticker.emoji} {selectedSticker.label}</div> : null}
               </div>
               {selectedClip?.audioMediaId && stageAudioUrl ? <audio className="audio-preview" src={stageAudioUrl} controls /> : null}
               {selectedClip ? (
-                <div className="editor-grid-2">
-                  <label className="form"><span className="timeline-label">Reencuadre X</span><input className="input" type="range" min="0" max="100" value={selectedClip.frameX} onChange={(event) => updateClip(selectedClip.id, { frameX: Number(event.target.value) })} /></label>
-                  <label className="form"><span className="timeline-label">Reencuadre Y</span><input className="input" type="range" min="0" max="100" value={selectedClip.frameY} onChange={(event) => updateClip(selectedClip.id, { frameY: Number(event.target.value) })} /></label>
-                  <label className="form"><span className="timeline-label">Escala</span><input className="input" type="range" min="0.6" max="1.8" step="0.01" value={selectedClip.frameScale} onChange={(event) => updateClip(selectedClip.id, { frameScale: Number(event.target.value) })} /></label>
-                  <label className="form"><span className="timeline-label">Trim inicio</span><input className="input" type="range" min="0" max={selectedClip.end > 0 ? selectedClip.end - 0.1 : 0} step="0.1" value={selectedClip.start} onChange={(event) => updateClip(selectedClip.id, { start: Number(event.target.value) })} /></label>
-                  <label className="form"><span className="timeline-label">Trim fin</span><input className="input" type="range" min={selectedClip.start + 0.1} max={Math.max(selectedClip.end + 10, selectedClip.start + 0.1)} step="0.1" value={selectedClip.end} onChange={(event) => updateClip(selectedClip.id, { end: Number(event.target.value) })} /></label>
-                </div>
+                <>
+                  <div className="editor-grid-2">
+                    <label className="form"><span className="timeline-label">Reencuadre X</span><input className="input" type="range" min="0" max="100" value={selectedClip.frameX} onChange={(event) => updateClip(selectedClip.id, { frameX: Number(event.target.value) })} /></label>
+                    <label className="form"><span className="timeline-label">Reencuadre Y</span><input className="input" type="range" min="0" max="100" value={selectedClip.frameY} onChange={(event) => updateClip(selectedClip.id, { frameY: Number(event.target.value) })} /></label>
+                    <label className="form"><span className="timeline-label">Escala</span><input className="input" type="range" min="0.6" max="1.8" step="0.01" value={selectedClip.frameScale} onChange={(event) => updateClip(selectedClip.id, { frameScale: Number(event.target.value) })} /></label>
+                    <label className="form"><span className="timeline-label">Audio del clip</span><div className="input input-readonly">{selectedClip.audioMediaId ? (library.find((item) => item.id === selectedClip.audioMediaId)?.name ?? 'Audio asignado') : 'Sin audio asignado'}</div></label>
+                  </div>
+                  <div className="trim-panel">
+                    <div className="row-head"><h3 className="mini-title">Trim visual</h3><div className="timeline-label">{selectedClip.start.toFixed(1)}s → {selectedClip.end.toFixed(1)}s</div></div>
+                    <div className="trim-bar"><span style={{ left: trimLeft, width: trimWidth }} /></div>
+                    <div className="editor-grid-2">
+                      <label className="form"><span className="timeline-label">Inicio</span><input className="input" type="range" min="0" max={Math.max(selectedClip.end - 0.1, 0)} step="0.1" value={selectedClip.start} onChange={(event) => updateClip(selectedClip.id, { start: Number(event.target.value) })} /></label>
+                      <label className="form"><span className="timeline-label">Fin</span><input className="input" type="range" min={selectedClip.start + 0.1} max={trimMax} step="0.1" value={selectedClip.end} onChange={(event) => updateClip(selectedClip.id, { end: Number(event.target.value) })} /></label>
+                    </div>
+                  </div>
+                </>
               ) : null}
             </div>
 
@@ -330,6 +370,42 @@ export default function StudioPage() {
                 <button className="btn" onClick={() => deleteClip(selectedClip.id)}>Borrar clip</button>
               </div>
             ) : null}
+          </div>
+
+          <div className="studio-grid-2">
+            <div className="panel timeline">
+              <div className="row-head">
+                <h2 className="section-title">Copy editable</h2>
+                <div className="timeline-label">Textos guardados por clip</div>
+              </div>
+              {selectedClip ? (
+                <div className="form">
+                  <input className="input" value={selectedClip.headlineText} onChange={(event) => updateClip(selectedClip.id, { headlineText: event.target.value })} placeholder="Headline" />
+                  <textarea className="textarea" value={selectedClip.captionText} onChange={(event) => updateClip(selectedClip.id, { captionText: event.target.value })} rows={3} placeholder="Caption" />
+                  <div className="preset-chip-wrap">
+                    {TEXT_PRESET_SUGGESTIONS.map((text) => (
+                      <button key={text} className="preset-chip" onClick={() => updateClip(selectedClip.id, { headlineText: text })}>{text}</button>
+                    ))}
+                  </div>
+                </div>
+              ) : <div className="empty">Selecciona un clip.</div>}
+            </div>
+
+            <div className="panel timeline">
+              <div className="row-head">
+                <h2 className="section-title">Stickers base</h2>
+                <div className="timeline-label">Aplicables al clip activo</div>
+              </div>
+              <div className="sticker-grid">
+                {STICKER_PRESETS.map((sticker) => (
+                  <button key={sticker.id} className={`sticker-card ${selectedClip?.stickerId === sticker.id ? 'active' : ''}`} onClick={() => selectedClip ? updateClip(selectedClip.id, { stickerId: sticker.id }) : undefined}>
+                    <span>{sticker.emoji}</span>
+                    <strong>{sticker.label}</strong>
+                  </button>
+                ))}
+                {selectedClip?.stickerId ? <button className="sticker-card clear-card" onClick={() => updateClip(selectedClip.id, { stickerId: null })}>Quitar sticker</button> : null}
+              </div>
+            </div>
           </div>
 
           <div className="panel timeline">
