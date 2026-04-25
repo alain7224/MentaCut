@@ -13,7 +13,7 @@ export default function HomePage() {
           <Link href="/studio/workspace" className="nav-link">Workspace</Link>
           <Link href="/studio/library" className="nav-link">Biblioteca</Link>
           <Link href="/studio/backup" className="nav-link">Backup local</Link>
-          <a href="https://www.clipshort.co/es" className="nav-link" target="_blank" rel="noreferrer">Referencia visual</a>
+          <Link href="/studio/settings" className="nav-link">Ajustes</Link>
         </nav>
       </header>
 
@@ -21,7 +21,7 @@ export default function HomePage() {
         <section className="hero">
           <div className="panel hero-copy">
             <span className="eyebrow">Local-first · responsive · Safari/PWA</span>
-            <h1 className="title">Editor de vídeo real con alma de CapCut y look iOS cristal.</h1>
+            <h1 className="title">Editor de vídeo real con look iOS cristal.</h1>
             <p className="sub">
               MentaCut arranca como aplicación web potente y usable en escritorio, Android e iPhone desde Safari,
               priorizando almacenamiento local, respuesta rápida y evolución hacia pipeline real con render fiable.
