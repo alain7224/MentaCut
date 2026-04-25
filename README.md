@@ -1,90 +1,108 @@
 # MentaCut ✂️
 
-> Acortador de URLs rápido, gratuito y sin registro — similar a [ClipShort](https://www.clipshort.co/es).
+> Editor web de vídeo y clips cortos con estilo visual moderno, enfoque mobile-first y base local para proyectos, media, biblioteca y flujo de estudio.
 
-![MentaCut screenshot](https://github.com/user-attachments/assets/2b0e7728-9fb3-4d2f-bb34-bdbcce8e080f)
+## Qué es MentaCut
 
-## Características
+MentaCut **no es un acortador de enlaces**.
 
-- ⚡ **Instantáneo** — acorta cualquier URL en menos de un segundo
-- 🔒 **Sin registro** — sin cuentas, sin formularios complicados
-- 📊 **Estadísticas** — contador de clics en tiempo real por enlace
-- 📱 **Código QR** — generado automáticamente para cada enlace corto
-- 🔁 **Deduplicación** — la misma URL siempre produce el mismo código corto
+MentaCut es una aplicación orientada a la **creación y edición de clips de vídeo** con una estructura de producto pensada para evolucionar hacia un editor más completo tipo CapCut / ClipShort visual, con:
 
-## Tecnología
+- editor de estudio
+- gestión de proyectos
+- gestión de media local
+- biblioteca de plantillas, stickers, overlays y textos
+- backup local
+- ajustes locales
+- workspace general del producto
+
+## Estado actual del proyecto
+
+La aplicación ya incluye una base funcional de interfaz en Next.js con varias rutas reales dentro del producto:
+
+- `/studio` — estudio/editor principal
+- `/studio/workspace` — vista general del workspace
+- `/studio/new` — asistente para crear proyectos nuevos
+- `/studio/projects` — gestión de proyectos locales
+- `/studio/media` — librería de media local
+- `/studio/library` — biblioteca de presets y recursos
+- `/studio/backup` — exportación e importación de backups locales
+- `/studio/settings` — ajustes locales del estudio
+- `/studio/open` — arranque inteligente según preferencias guardadas
+
+## Funciones ya trabajadas en la base actual
+
+### Editor / Studio
+- timeline visual
+- playhead
+- regla de tiempo
+- carriles de vídeo, audio y texto
+- selección de clips
+- split de clips
+- trim visual
+- mover, duplicar y borrar clips
+- copy editable por clip
+- overlays gráficos
+- stickers
+- plantillas base
+
+### Organización del producto
+- workspace con resumen del estado local
+- proyectos locales con crear, duplicar, renombrar y borrar
+- media local con preview y filtros
+- biblioteca con búsqueda y favoritos
+- backup local JSON
+- preferencias locales del estudio
+
+### Personalización local
+- favoritos para plantillas, stickers, overlays y textos
+- ruta de inicio preferida
+- formato por defecto para proyectos nuevos
+- opciones de comportamiento del estudio
+
+## Tecnología principal
 
 | Capa | Tecnología |
 |------|-----------|
-| Servidor | [Node.js](https://nodejs.org/) + [Express](https://expressjs.com/) |
-| Base de datos | [SQLite](https://www.sqlite.org/) vía [better-sqlite3](https://github.com/WiseLibs/better-sqlite3) |
-| Códigos únicos | [nanoid](https://github.com/ai/nanoid) (7 caracteres alfanuméricos) |
-| Frontend | HTML5 / CSS3 / Vanilla JS (sin dependencias externas) |
-| QR | Librería QR pura en JS incluida (`public/qr.js`) |
+| App web | [Next.js](https://nextjs.org/) |
+| UI | React + rutas App Router |
+| Persistencia local | `localStorage` + capa local de media del navegador |
+| Editor base | Componentes propios del estudio |
+| Estilo visual | CSS propio con enfoque moderno / iOS crystal-like |
 
 ## Instalación y uso
 
 ```bash
-# 1. Instalar dependencias
 npm install
+npm run dev
+```
 
-# 2. Arrancar el servidor (puerto 3000 por defecto)
+Luego abre:
+
+```bash
+http://localhost:3000
+```
+
+## Scripts principales
+
+```bash
+npm run dev
+npm run build
 npm start
 ```
 
-Abre `http://localhost:3000` en tu navegador.
+## Dirección del producto
 
-### Variables de entorno opcionales
+La dirección correcta de MentaCut es:
 
-| Variable | Por defecto | Descripción |
-|----------|------------|-------------|
-| `PORT` | `3000` | Puerto del servidor HTTP |
-| `BASE_URL` | `http://localhost:PORT` | URL base para los enlaces cortos generados |
-| `DB_PATH` | `./mentacut.db` | Ruta del fichero SQLite (`:memory:` para pruebas) |
+- **editor de vídeo y clips cortos**
+- **no** acortador de URLs
+- aplicación separada por áreas de trabajo
+- evolución hacia un producto de edición más completo
 
-### Ejemplo con dominio propio
+## Nota importante
 
-```bash
-BASE_URL=https://menta.cut PORT=80 npm start
-```
-
-## API
-
-### `POST /api/shorten`
-
-Acorta una URL.
-
-**Body:** `{ "url": "https://..." }`
-
-**Respuesta 201:**
-```json
-{
-  "short_url": "http://localhost:3000/fuYTazx",
-  "code": "fuYTazx",
-  "original": "https://...",
-  "clicks": 0
-}
-```
-
-### `GET /:code`
-
-Redirige (301) a la URL original e incrementa el contador de clics.
-
-### `GET /api/stats/:code`
-
-Devuelve las estadísticas de un enlace.
-
-### `GET /api/stats`
-
-Devuelve las estadísticas globales (`total_urls`, `total_clicks`).
-
-## Tests
-
-```bash
-npm test
-```
-
-Ejecuta 10 tests de integración contra una base de datos en memoria.
+Si en el historial del repositorio, PRs antiguos o textos automáticos aparece que MentaCut era una app para acortar enlaces, eso corresponde a una interpretación errónea anterior del proyecto y **no describe el enfoque real actual de MentaCut**.
 
 ## Licencia
 
