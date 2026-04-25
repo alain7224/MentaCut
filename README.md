@@ -6,7 +6,7 @@
 
 MentaCut **no es un acortador de enlaces**.
 
-MentaCut es una aplicación orientada a la **creación y edición de clips de vídeo** con una estructura de producto pensada para evolucionar hacia un editor más completo tipo CapCut / ClipShort visual, con:
+MentaCut es una aplicación orientada a la **creación y edición de clips de vídeo** con una estructura de producto pensada para evolucionar hacia un editor más completo de formato corto, con:
 
 - editor de estudio
 - gestión de proyectos
