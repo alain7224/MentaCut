@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>MentaCut – Acorta tus enlaces</title>
+  <meta name="description" content="MentaCut: acortador de URLs rápido, gratuito y sin registro. Convierte tus enlaces largos en URLs cortas al instante." />
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>✂️</text></svg>" />
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+  <!-- ── HEADER ─────────────────────────────────────────── -->
+  <header class="site-header">
+    <div class="container header-inner">
+      <a href="/" class="logo" aria-label="MentaCut – inicio">
+        <span class="logo-icon">✂️</span>
+        <span class="logo-text">Menta<strong>Cut</strong></span>
+      </a>
+      <nav class="header-nav">
+        <a href="#features">Características</a>
+        <a href="#how">¿Cómo funciona?</a>
+      </nav>
+    </div>
+  </header>
+
+  <!-- ── HERO ───────────────────────────────────────────── -->
+  <section class="hero">
+    <div class="container hero-inner">
+      <h1 class="hero-title">Acorta tus enlaces<br /><span class="accent">en un segundo</span></h1>
+      <p class="hero-subtitle">Pega tu URL larga y obtén un enlace corto, limpio y listo para compartir. Gratis, sin registro.</p>
+
+      <!-- SHORTENER FORM -->
+      <form class="shorten-form" id="shortenForm" novalidate>
+        <div class="input-row">
+          <input
+            type="url"
+            id="urlInput"
+            class="url-input"
+            placeholder="https://tu-enlace-muy-largo.com/ejemplo?utm_source=..."
+            autocomplete="off"
+            spellcheck="false"
+            required
+            aria-label="URL a acortar"
+          />
+          <button type="submit" class="btn-shorten" id="submitBtn">
+            <span class="btn-text">Acortar</span>
+            <span class="btn-spinner" hidden aria-hidden="true"></span>
+          </button>
+        </div>
+        <p class="form-error" id="formError" role="alert" hidden></p>
+      </form>
+
+      <!-- RESULT CARD -->
+      <div class="result-card" id="resultCard" hidden>
+        <div class="result-header">
+          <span class="result-badge">✅ ¡Enlace listo!</span>
+        </div>
+        <div class="result-body">
+          <div class="result-url-row">
+            <a class="result-short-url" id="resultShortUrl" href="#" target="_blank" rel="noopener noreferrer"></a>
+            <button class="btn-copy" id="copyBtn" aria-label="Copiar enlace corto">
+              <span id="copyIcon">📋</span>
+              <span id="copyText">Copiar</span>
+            </button>
+          </div>
+          <p class="result-original" id="resultOriginal"></p>
+          <div class="result-stats">
+            <span class="stat-pill">👆 <strong id="resultClicks">0</strong> clics</span>
+            <a class="stat-pill stat-link" id="resultStatsLink" href="#" target="_blank" rel="noopener noreferrer">📊 Ver estadísticas</a>
+          </div>
+          <div class="qr-section">
+            <canvas id="qrCanvas" width="128" height="128" title="Código QR del enlace" role="img" aria-label="Código QR del enlace corto">Código QR del enlace corto. Usa también el enlace corto mostrado arriba para abrirlo o compartirlo.</canvas>
+          </div>
+        </div>
+      </div>
+
+      <!-- GLOBAL STATS PILLS -->
+      <div class="global-stats" id="globalStats">
+        <div class="stat-item"><span id="statUrls">–</span><small>URLs acortadas</small></div>
+        <div class="stat-divider"></div>
+        <div class="stat-item"><span id="statClicks">–</span><small>Clics totales</small></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── FEATURES ───────────────────────────────────────── -->
+  <section class="features" id="features">
+    <div class="container">
+      <h2 class="section-title">¿Por qué MentaCut?</h2>
+      <div class="features-grid">
+        <div class="feature-card">
+          <div class="feature-icon">⚡</div>
+          <h3>Velocidad</h3>
+          <p>Acorta cualquier URL en menos de un segundo, sin pasos adicionales ni formularios complicados.</p>
+        </div>
+        <div class="feature-card">
+          <div class="feature-icon">🔒</div>
+          <h3>Sin registro</h3>
+          <p>No necesitas crear una cuenta. Pega tu enlace y listo. Tu privacidad es lo primero.</p>
+        </div>
+        <div class="feature-card">
+          <div class="feature-icon">📊</div>
+          <h3>Estadísticas</h3>
+          <p>Cada enlace incluye un contador de clics en tiempo real para que sepas cuánta gente lo visita.</p>
+        </div>
+        <div class="feature-card">
+          <div class="feature-icon">📱</div>
+          <h3>Código QR</h3>
+          <p>Obtén automáticamente el código QR de tu enlace acortado para compartirlo en papel o pantallas.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── HOW IT WORKS ───────────────────────────────────── -->
+  <section class="how-it-works" id="how">
+    <div class="container">
+      <h2 class="section-title">¿Cómo funciona?</h2>
+      <ol class="steps">
+        <li class="step">
+          <span class="step-num">1</span>
+          <div>
+            <strong>Pega tu URL</strong>
+            <p>Copia la dirección larga de cualquier página web y pégala en el campo de arriba.</p>
+          </div>
+        </li>
+        <li class="step">
+          <span class="step-num">2</span>
+          <div>
+            <strong>Haz clic en "Acortar"</strong>
+            <p>MentaCut genera al instante un enlace único y memorable de 7 caracteres.</p>
+          </div>
+        </li>
+        <li class="step">
+          <span class="step-num">3</span>
+          <div>
+            <strong>Comparte y haz seguimiento</strong>
+            <p>Copia el enlace o escanea el QR. Consulta los clics en cualquier momento desde la misma página.</p>
+          </div>
+        </li>
+      </ol>
+    </div>
+  </section>
+
+  <!-- ── FOOTER ─────────────────────────────────────────── -->
+  <footer class="site-footer">
+    <div class="container footer-inner">
+      <span class="logo-text footer-logo">Menta<strong>Cut</strong></span>
+      <p class="footer-tagline">El acortador de URLs más fresco 🌿</p>
+      <p class="footer-copy">&copy; <span id="footerYear"></span> MentaCut. Todos los derechos reservados.</p>
+    </div>
+  </footer>
+
+  <!-- Tiny QR code library (pure JS, no CDN needed) -->
+  <script src="qr.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>

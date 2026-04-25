@@ -1,0 +1,19 @@
+# Dependencies
+node_modules/
+
+# Database
+*.db
+*.db-shm
+*.db-wal
+
+# Logs
+npm-debug.log*
+*.log
+
+# Environment
+.env
+.env.local
+
+# OS
+.DS_Store
+Thumbs.db
