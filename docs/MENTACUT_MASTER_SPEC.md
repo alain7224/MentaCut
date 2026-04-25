@@ -4,8 +4,8 @@
 - UI estilo iOS cristal
 - todos los botones con animación real
 - look premium, no infantil
-- inspiración visual de ClipShort
-- timeline tipo CapCut
+- inspiración visual propia y moderna
+- timeline tipo editor profesional
 
 ## Objetivo del producto
 App de edición de vídeo real, funcional, orientada a formatos cortos sociales, con editor web moderno, subida de media, timeline, plantillas animadas, subtítulos, overlays, audio y export fiable.
@@ -43,7 +43,7 @@ App de edición de vídeo real, funcional, orientada a formatos cortos sociales,
 - zoom y preview sobre la pista de audio
 
 ### Timeline / editor
-- línea de tiempo tipo CapCut
+- línea de tiempo tipo editor avanzado
 - preview en audio, vídeo y foto
 - zoom en la línea de tiempo
 - trim fino
