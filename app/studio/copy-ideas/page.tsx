@@ -48,34 +48,39 @@ export default function StudioCopyIdeasPage() {
           </div>
         </section>
         <section className="section">
-          <div className="panel timeline">
-            <div className="row-head"><h2 className="section-title">Proyecto activo</h2><div className="timeline-label">Base de ideas</div></div>
-            <select className="input" value={activeProjectId ?? ''} onChange={(event) => setActiveProjectId(event.target.value)}>
-              {projects.map((project) => <option key={project.id} value={project.id}>{project.name} · {project.format}</option>)}
-            </select>
-          </div>
-        </section>
-        <section className="section">
           <div className="studio-grid-2">
+            <div className="panel timeline">
+              <div className="row-head"><h2 className="section-title">Proyecto activo</h2><div className="timeline-label">Base de ideas</div></div>
+              <select className="input" value={activeProjectId ?? ''} onChange={(event) => setActiveProjectId(event.target.value)}>
+                {projects.map((project) => <option key={project.id} value={project.id}>{project.name} · {project.format}</option>)}
+              </select>
+              <div className="project-list">
+                <div className="project-item"><strong>Audiencia</strong><div className="timeline-label">{activeBrief?.audience || '—'}</div></div>
+                <div className="project-item"><strong>Objetivo</strong><div className="timeline-label">{activeBrief?.objective || '—'}</div></div>
+                <div className="project-item"><strong>CTA base</strong><div className="timeline-label">{activeBrief?.cta || '—'}</div></div>
+              </div>
+            </div>
             <div className="panel timeline">
               <div className="row-head"><h2 className="section-title">Hooks</h2><div className="timeline-label">Arranque</div></div>
               <div className="project-list">
                 {ideas.hooks.length ? ideas.hooks.map((item, index) => <div key={`${item}-${index}`} className="project-item"><strong>Hook {index + 1}</strong><div className="timeline-label">{item}</div></div>) : <div className="empty">Faltan datos en el brief para generar hooks.</div>}
               </div>
             </div>
+          </div>
+        </section>
+        <section className="section">
+          <div className="studio-grid-2">
             <div className="panel timeline">
               <div className="row-head"><h2 className="section-title">CTA</h2><div className="timeline-label">Cierre</div></div>
               <div className="project-list">
                 {ideas.ctas.length ? ideas.ctas.map((item, index) => <div key={`${item}-${index}`} className="project-item"><strong>CTA {index + 1}</strong><div className="timeline-label">{item}</div></div>) : <div className="empty">Faltan datos en el brief para generar CTA.</div>}
               </div>
             </div>
-          </div>
-        </section>
-        <section className="section">
-          <div className="panel timeline">
-            <div className="row-head"><h2 className="section-title">Captions sugeridas</h2><div className="timeline-label">Desarrollo</div></div>
-            <div className="project-list">
-              {ideas.captions.length ? ideas.captions.map((item, index) => <div key={`${item}-${index}`} className="project-item"><strong>Caption {index + 1}</strong><div className="timeline-label">{item}</div></div>) : <div className="empty">Faltan datos en el brief para generar captions.</div>}
+            <div className="panel timeline">
+              <div className="row-head"><h2 className="section-title">Captions sugeridas</h2><div className="timeline-label">Desarrollo</div></div>
+              <div className="project-list">
+                {ideas.captions.length ? ideas.captions.map((item, index) => <div key={`${item}-${index}`} className="project-item"><strong>Caption {index + 1}</strong><div className="timeline-label">{item}</div></div>) : <div className="empty">Faltan datos en el brief para generar captions.</div>}
+              </div>
             </div>
           </div>
         </section>
