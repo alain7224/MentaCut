@@ -3,13 +3,15 @@
 import Link from 'next/link'
 import { useEffect, useMemo, useState } from 'react'
 import { readLocalProjects, touchProject, writeLocalProjects, type LocalProject } from '@/lib/local-store'
-import { buildSubtitleCues, exportCuesToSrt, type SubtitleMode } from '@/lib/subtitle-utils'
+import { buildSegmentedSubtitleCues, buildSubtitleCues, exportCuesToSrt, type SubtitleMode } from '@/lib/subtitle-utils'
 
 export default function StudioSubtitlesPage() {
   const [projects, setProjects] = useState<LocalProject[]>([])
   const [activeId, setActiveId] = useState<string | null>(null)
   const [mode, setMode] = useState<SubtitleMode>('mixed')
   const [uppercase, setUppercase] = useState(false)
+  const [segmented, setSegmented] = useState(true)
+  const [maxChars, setMaxChars] = useState(42)
   const [status, setStatus] = useState('')
 
   useEffect(() => {
@@ -22,11 +24,12 @@ export default function StudioSubtitlesPage() {
 
   const cues = useMemo(() => {
     if (!active) return []
-    return buildSubtitleCues(active, mode).map((cue) => ({
+    const base = segmented ? buildSegmentedSubtitleCues(active, mode, maxChars) : buildSubtitleCues(active, mode)
+    return base.map((cue) => ({
       ...cue,
       text: uppercase ? cue.text.toUpperCase() : cue.text,
     }))
-  }, [active, mode, uppercase])
+  }, [active, mode, uppercase, segmented, maxChars])
 
   const srtText = useMemo(() => exportCuesToSrt(cues), [cues])
 
@@ -58,6 +61,8 @@ export default function StudioSubtitlesPage() {
       projectName: active.name,
       mode,
       uppercase,
+      segmented,
+      maxChars,
       cues,
     }
     const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' })
@@ -72,13 +77,20 @@ export default function StudioSubtitlesPage() {
 
   function applyCuesToCaptions() {
     if (!active) return
+    const grouped = new Map<string, string[]>()
+    cues.forEach((cue) => {
+      const current = grouped.get(cue.clipId) ?? []
+      current.push(cue.text)
+      grouped.set(cue.clipId, current)
+    })
+
     const updated = projects.map((project) => {
       if (project.id !== active.id) return project
       return touchProject({
         ...project,
-        clips: project.clips.map((clip, index) => ({
+        clips: project.clips.map((clip) => ({
           ...clip,
-          captionText: cues[index]?.text || clip.captionText,
+          captionText: grouped.get(clip.id)?.join(' ') || clip.captionText,
         })),
       })
     })
@@ -116,7 +128,7 @@ export default function StudioSubtitlesPage() {
               <Link href="/studio/text-tools" className="btn">Abrir text tools</Link>
               <button className="btn" onClick={applyCuesToCaptions} disabled={!active}>Aplicar a captions</button>
             </div>
-            <div className="timeline-label">{status || 'Elige modo y exporta los subtítulos del proyecto.'}</div>
+            <div className="timeline-label">{status || 'Elige modo, decide si quieres segmentación y exporta los subtítulos.'}</div>
           </div>
         </section>
 
@@ -143,6 +155,15 @@ export default function StudioSubtitlesPage() {
                   <div className="timeline-label">{uppercase ? 'Activo' : 'Inactivo'}</div>
                   <input type="checkbox" checked={uppercase} onChange={(event) => setUppercase(event.target.checked)} />
                 </label>
+                <label className="project-item" style={{ cursor: 'pointer' }}>
+                  <strong>Segmentar por frases</strong>
+                  <div className="timeline-label">{segmented ? 'Activo' : 'Un cue por clip'}</div>
+                  <input type="checkbox" checked={segmented} onChange={(event) => setSegmented(event.target.checked)} />
+                </label>
+                <label className="form">
+                  <span className="timeline-label">Longitud objetivo por cue: {maxChars} caracteres</span>
+                  <input className="input" type="range" min="18" max="72" step="2" value={maxChars} onChange={(event) => setMaxChars(Number(event.target.value))} disabled={!segmented} />
+                </label>
                 <div className="action-row">
                   <button className="btn btn-primary" onClick={exportSrt} disabled={!active}>Exportar SRT</button>
                   <button className="btn" onClick={exportJson} disabled={!active}>Exportar JSON</button>
@@ -160,6 +181,8 @@ export default function StudioSubtitlesPage() {
                 <article className="panel card"><h3>Palabras</h3><p><strong>{stats.words}</strong></p></article>
                 <article className="panel card"><h3>Duración total</h3><p><strong>{stats.duration.toFixed(1)} s</strong></p></article>
                 <article className="panel card"><h3>Modo</h3><p><strong>{mode === 'headline' ? 'Headlines' : mode === 'caption' ? 'Captions' : 'Mixto'}</strong></p></article>
+                <article className="panel card"><h3>Segmentación</h3><p><strong>{segmented ? 'Por frases' : 'Una por clip'}</strong></p></article>
+                <article className="panel card"><h3>Máx. aprox.</h3><p><strong>{segmented ? `${maxChars} chars` : '—'}</strong></p></article>
               </div>
             </div>
           </div>
@@ -170,7 +193,7 @@ export default function StudioSubtitlesPage() {
             <div className="panel timeline">
               <div className="row-head">
                 <h2 className="section-title">Preview de cues</h2>
-                <div className="timeline-label">Clip por clip</div>
+                <div className="timeline-label">Cue por cue</div>
               </div>
               <div className="project-list">
                 {cues.length === 0 ? <div className="empty">No hay cues para mostrar.</div> : null}
